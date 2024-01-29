@@ -1,22 +1,44 @@
-import { useWindowSize } from '@uidotdev/usehooks'
+import styled from 'styled-components'
 import './index.css'
 import { MapboxProvider } from './contexts/MapboxContext'
-import { Mapbox } from './components/Mapbox'
+import { DataProvider } from './contexts/DataContext'
+import Mapbox from './components/Mapbox'
+import Activity from './components/Activity'
+import Loader from './components/Loader'
+
+const Layout = styled.div`
+  position: relative;
+  overflow: hidden;
+`
+
+const MapWrapper = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+`
+
+const UI = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: rgba(0, 0, 0, 0.5);
+`
 
 function App() {
-  const { width, height } = useWindowSize()
   return (
-    <MapboxProvider>
-      {width && height && (
-        <Mapbox
-          width={width}
-          height={height}
-          longitude={3.9916938214529996}
-          latitude={43.55226599834255}
-          zoom={8}
-        />
-      )}
-    </MapboxProvider>
+    <Layout>
+      <MapboxProvider>
+        <DataProvider>
+          <MapWrapper>
+            <Mapbox />
+          </MapWrapper>
+          <UI>
+            <Activity />
+          </UI>
+          <Loader />
+        </DataProvider>
+      </MapboxProvider>
+    </Layout>
   )
 }
 
