@@ -32,27 +32,26 @@ const Mapbox: FC<MapboxProps> = () => {
     })
     registerMap(map.current)
   }, [width, height, registerMap])
-  console.log(data)
 
   useEffect(() => {
     if (!map.current) return
     const bbox = data.reduce(
       (memo, item) => {
-        console.log(item)
         return {
-          north: Math.max(memo.north, item.latitude),
-          south: Math.min(memo.south, item.latitude),
-          east: Math.min(memo.east, item.longitude),
-          west: Math.max(memo.west, item.longitude),
+          north: Math.min(memo.north, item.latitude),
+          south: Math.max(memo.south, item.latitude),
+          east: Math.max(memo.east, item.longitude),
+          west: Math.min(memo.west, item.longitude),
         }
       },
       { north: 90, south: -90, east: -180, west: 180 }
     )
+    console.log(bbox)
     map.current.fitBounds([
       new mapboxgl.LngLat(bbox.west, bbox.south),
       new mapboxgl.LngLat(bbox.east, bbox.north),
     ])
-  }, [])
+  }, [data])
 
   if (!width || !height) return null
 

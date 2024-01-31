@@ -1,15 +1,16 @@
 import { createContext, useState, useEffect, FC, ReactNode } from 'react'
-import { parse, Parser } from 'papaparse'
+import { parse } from 'papaparse'
+import { uniqBy } from 'lodash'
 
 interface Props {
   children: ReactNode
 }
 
-interface Item {
+export interface Item {
   date: string
   longitude: number
   latitude: number
-  // [x: string | number | symbol]: string | number | boolean | null
+  [key: string]: string | number | boolean | null | undefined
 }
 
 interface DataContextInterface {
@@ -28,26 +29,28 @@ export const DataProvider: FC<Props> = ({ children }) => {
   const [data, setData] = useState<Item[]>(defaultDataContext.data)
   // const [stream, setStream] = useState<Item | undefined>()
   const [loading, setLoading] = useState<boolean>(defaultDataContext.loading)
-  console.log('data provider render')
 
   useEffect(() => {
     setLoading(true)
-    console.log('start loading')
     let unmount = false
     let items: Item[] = []
     parse<Item>('http://localhost:5173/full.csv', {
       download: true,
+      dynamicTyping: true,
       header: true,
       chunk: (r, parser) => {
         if (unmount) {
           parser.abort()
           return
         }
-        items = items.concat(r.data)
+        items = items.concat(
+          r.data.filter((item) => item.nature_mutation === 'Vente')
+        )
+        // parser.abort()
       },
       complete: () => {
         if (unmount) return
-        setData(items)
+        setData(uniqBy(items, 'id_mutation'))
       },
     })
     return () => {

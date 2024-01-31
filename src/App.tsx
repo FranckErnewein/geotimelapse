@@ -6,10 +6,7 @@ import Mapbox from './components/Mapbox'
 import Activity from './components/Activity'
 import Loader from './components/Loader'
 
-const Layout = styled.div`
-  position: relative;
-  overflow: hidden;
-`
+const Layout = styled.div``
 
 const MapWrapper = styled.div`
   position: absolute;
@@ -19,16 +16,16 @@ const MapWrapper = styled.div`
 
 const UI = styled.div`
   position: absolute;
-  top: 0;
+  bottom: 0;
   left: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(255, 255, 255, 0.1);
 `
 
 function App() {
   return (
-    <Layout>
-      <MapboxProvider>
-        <DataProvider>
+    <MapboxProvider>
+      <DataProvider>
+        <Layout>
           <MapWrapper>
             <Mapbox />
           </MapWrapper>
@@ -36,9 +33,9 @@ function App() {
             <Activity />
           </UI>
           <Loader />
-        </DataProvider>
-      </MapboxProvider>
-    </Layout>
+        </Layout>
+      </DataProvider>
+    </MapboxProvider>
   )
 }
 
