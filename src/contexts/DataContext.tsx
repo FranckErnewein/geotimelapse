@@ -53,11 +53,10 @@ export const DataProvider: FC<Props> = ({ children }) => {
               item.longitude < 10
           )
         )
-        // parser.abort()
+        parser.abort()
       },
       complete: () => {
         if (unmount) return
-        console.log(items)
         setData(sortBy(uniqBy(items, 'id_mutation'), 'date_mutation'))
       },
     })
