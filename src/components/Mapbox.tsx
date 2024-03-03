@@ -46,7 +46,6 @@ const Mapbox: FC<MapboxProps> = () => {
       },
       { north: 90, south: -90, east: -180, west: 180 }
     )
-    console.log(bbox)
     map.current.fitBounds([
       new mapboxgl.LngLat(bbox.west, bbox.south),
       new mapboxgl.LngLat(bbox.east, bbox.north),

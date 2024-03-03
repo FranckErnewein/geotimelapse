@@ -8,7 +8,7 @@ import dayRange from '../utils/dayRange'
 interface ActivityProps {}
 
 const Bar = styled.div`
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(255, 255, 255, 0.1);
   border-top: 1px solid rgba(255, 255, 255, 0.2);
   position: absolute;
   bottom: 0;
@@ -32,7 +32,7 @@ const Activity: FC<ActivityProps> = () => {
   range.forEach((day) => {
     if (!activity[day]) activity[day] = 0
   })
-  const height = 400
+  const height = 200
   const maxValue = max(values(activity)) || 0
   const barCount = keys.length
   const barWidth = Math.floor(width / barCount)
@@ -50,7 +50,7 @@ const Activity: FC<ActivityProps> = () => {
               style={{
                 left: (barWidth + 1) * i,
                 width: barWidth,
-                height: (value / maxValue) * height,
+                height: (value / maxValue) * height - 1,
               }}
             />
           )

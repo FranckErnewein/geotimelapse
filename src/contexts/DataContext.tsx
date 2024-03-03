@@ -1,6 +1,6 @@
 import { createContext, useState, useEffect, FC, ReactNode } from 'react'
 import { parse } from 'papaparse'
-import { uniqBy } from 'lodash'
+import { uniqBy, sortBy } from 'lodash'
 
 interface Props {
   children: ReactNode
@@ -44,13 +44,21 @@ export const DataProvider: FC<Props> = ({ children }) => {
           return
         }
         items = items.concat(
-          r.data.filter((item) => item.nature_mutation === 'Vente')
+          r.data.filter(
+            (item) =>
+              item.nature_mutation === 'Vente' &&
+              item.latitude < 60 &&
+              item.latitude > 41 &&
+              item.longitude > -10 &&
+              item.longitude < 10
+          )
         )
         // parser.abort()
       },
       complete: () => {
         if (unmount) return
-        setData(uniqBy(items, 'id_mutation'))
+        console.log(items)
+        setData(sortBy(uniqBy(items, 'id_mutation'), 'date_mutation'))
       },
     })
     return () => {
