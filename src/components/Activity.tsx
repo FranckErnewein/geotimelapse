@@ -1,11 +1,13 @@
-import { FC, useContext } from 'react'
+import { FC } from 'react'
 import styled from 'styled-components'
 import { mapValues, groupBy, max, min, values } from 'lodash'
-import { useWindowSize } from '@uidotdev/usehooks'
-import DataContext from '../contexts/DataContext'
 import dayRange from '../utils/dayRange'
+import { Item } from '../hooks/useCSV'
 
-interface ActivityProps {}
+interface ActivityProps {
+  data: Item[]
+  width: number
+}
 
 const Bar = styled.div`
   background: rgba(255, 255, 255, 0.1);
@@ -14,11 +16,8 @@ const Bar = styled.div`
   bottom: 0;
 `
 
-const Activity: FC<ActivityProps> = () => {
-  const { data } = useContext(DataContext)
-  const { width } = useWindowSize()
-
-  if (!width) return null
+const Activity: FC<ActivityProps> = ({ data, width }) => {
+  if (data.length === 0) return null
 
   const activity: { [date: string]: number } = mapValues(
     groupBy(data, 'date_mutation'),
@@ -38,7 +37,7 @@ const Activity: FC<ActivityProps> = () => {
   const barWidth = Math.floor(width / barCount)
 
   return (
-    <div style={{ height, width: width || '100%' }}>
+    <div style={{ height, width }}>
       {Object.keys(activity)
         .sort()
         .map((date: string, i: number) => {

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { parse } from 'papaparse'
+import { parse, Parser } from 'papaparse'
 import { uniqBy, sortBy } from 'lodash'
 
 export interface Item {
@@ -9,23 +9,20 @@ export interface Item {
   [key: string]: string | number | boolean | null | undefined
 }
 
-export default function useCSV() {
+export default function useCSV(url: string) {
   const [data, setData] = useState<Item[]>([])
   const [loading, setLoading] = useState<boolean>(false)
 
   useEffect(() => {
     setLoading(true)
-    let unmount = false
+    let parser: Parser | null = null
     let items: Item[] = []
-    parse<Item>('http://localhost:5173/full.csv', {
+    parse<Item>(url, {
       download: true,
       dynamicTyping: true,
       header: true,
-      chunk: (r, parser) => {
-        if (unmount) {
-          parser.abort()
-          return
-        }
+      chunk: (r, _parser) => {
+        parser = _parser
         items = items.concat(
           r.data.filter(
             (item) => item.nature_mutation === 'Vente' //&&
@@ -38,15 +35,14 @@ export default function useCSV() {
         // parser.abort()
       },
       complete: () => {
-        if (unmount) return
         setData(sortBy(uniqBy(items, 'id_mutation'), 'date_mutation'))
         setLoading(false)
       },
     })
     return () => {
-      unmount = true
+      if (parser) parser.abort()
     }
-  }, [setData])
+  }, [url])
 
   return { data, loading }
 }
