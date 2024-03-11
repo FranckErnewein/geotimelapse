@@ -1,42 +1,37 @@
-import { useState, useEffect } from 'react'
-import { parse, Parser } from 'papaparse'
-import { uniqBy, sortBy } from 'lodash'
+import { useState, useEffect, useMemo } from 'react'
+import { Item, WorkerAnwser } from '../types'
+import csvWorker from '../csvWorker?worker&url'
 
-export interface Item {
-  date: string
-  longitude: number
-  latitude: number
-  [key: string]: string | number | boolean | null | undefined
-}
-
-export default function useCSV(url: string) {
+export default function useCSV(url: string, bounds: number[]) {
+  const worker = useMemo<Worker>(() => {
+    console.log('init worker')
+    const w = new Worker(new URL(csvWorker, import.meta.url), {
+      type: 'module',
+    })
+    w.onmessage = (event: MessageEvent<WorkerAnwser>) => {
+      if (event.data.type === 'local') {
+        setLocalData(event.data.items)
+      }
+      if (event.data.type === 'global') {
+        setData(event.data.items)
+      }
+      setLoading(false)
+    }
+    return w
+  }, [])
   const [data, setData] = useState<Item[]>([])
+  const [localData, setLocalData] = useState<Item[]>([])
   const [loading, setLoading] = useState<boolean>(false)
+  console.log('useCSV')
 
   useEffect(() => {
     setLoading(true)
-    let parser: Parser | null = null
-    let items: Item[] = []
-    parse<Item>(url, {
-      download: true,
-      dynamicTyping: true,
-      header: true,
-      chunk: (r, _parser) => {
-        parser = _parser
-        items = items.concat(
-          r.data.filter((item) => item.nature_mutation === 'Vente')
-        )
-        // parser.abort()
-      },
-      complete: () => {
-        setData(sortBy(uniqBy(items, 'id_mutation'), 'date_mutation'))
-        setLoading(false)
-      },
-    })
-    return () => {
-      if (parser) parser.abort()
-    }
-  }, [url])
+    worker.postMessage(url)
+  }, [url, worker])
 
-  return { data, loading }
+  useEffect(() => {
+    worker.postMessage(bounds)
+  }, [bounds, worker])
+
+  return { data, localData, loading }
 }

@@ -2,7 +2,7 @@ import { FC } from 'react'
 import styled from 'styled-components'
 import { mapValues, groupBy, max, min, values } from 'lodash'
 import dayRange from '../utils/dayRange'
-import { Item } from '../hooks/useCSV'
+import { Item } from '../types'
 
 interface ActivityProps {
   data: Item[]
@@ -14,7 +14,6 @@ const Bar = styled.div`
   border-top: 1px solid rgba(255, 255, 255, 0.3);
   position: absolute;
   bottom: 0;
-  transition: height 200ms;
 `
 
 const Activity: FC<ActivityProps> = ({ data, width }) => {
