@@ -10,10 +10,11 @@ interface ActivityProps {
 }
 
 const Bar = styled.div`
-  background: rgba(255, 255, 255, 0.1);
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.15);
+  border-top: 1px solid rgba(255, 255, 255, 0.3);
   position: absolute;
   bottom: 0;
+  transition: height 200ms;
 `
 
 const Activity: FC<ActivityProps> = ({ data, width }) => {
@@ -42,7 +43,7 @@ const Activity: FC<ActivityProps> = ({ data, width }) => {
         .sort()
         .map((date: string, i: number) => {
           const value = activity[date]
-          return (
+          return value === 0 ? null : (
             <Bar
               title={`${date}:${value}`}
               key={date}

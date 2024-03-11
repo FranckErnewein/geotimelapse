@@ -24,13 +24,7 @@ export default function useCSV(url: string) {
       chunk: (r, _parser) => {
         parser = _parser
         items = items.concat(
-          r.data.filter(
-            (item) => item.nature_mutation === 'Vente' //&&
-            // item.latitude < 60 &&
-            // item.latitude > 41 &&
-            // item.longitude > -10 &&
-            // item.longitude < 10
-          )
+          r.data.filter((item) => item.nature_mutation === 'Vente')
         )
         // parser.abort()
       },
