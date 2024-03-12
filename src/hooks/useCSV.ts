@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Item, WorkerAnwser } from '../types'
+import { WorkerAnwser } from '../types'
 import csvWorker from '../csvWorker?worker&url'
 
 export default function useCSV(url: string, bounds: number[]) {
@@ -9,20 +9,13 @@ export default function useCSV(url: string, bounds: number[]) {
       type: 'module',
     })
     w.onmessage = (event: MessageEvent<WorkerAnwser>) => {
-      if (event.data.type === 'local') {
-        setLocalData(event.data.items)
-      }
-      if (event.data.type === 'global') {
-        setData(event.data.items)
-      }
+      setData((prevData) => ({ ...prevData, ...event.data }))
       setLoading(false)
     }
     return w
   }, [])
-  const [data, setData] = useState<Item[]>([])
-  const [localData, setLocalData] = useState<Item[]>([])
+  const [data, setData] = useState<WorkerAnwser>({})
   const [loading, setLoading] = useState<boolean>(false)
-  console.log('useCSV')
 
   useEffect(() => {
     setLoading(true)
@@ -33,5 +26,5 @@ export default function useCSV(url: string, bounds: number[]) {
     worker.postMessage(bounds)
   }, [bounds, worker])
 
-  return { data, localData, loading }
+  return { data, loading }
 }

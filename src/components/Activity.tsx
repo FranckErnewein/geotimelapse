@@ -1,55 +1,39 @@
 import { FC } from 'react'
 import styled from 'styled-components'
-import { mapValues, groupBy, max, min, values } from 'lodash'
-import dayRange from '../utils/dayRange'
-import { Item } from '../types'
-
-interface ActivityProps {
-  data: Item[]
-  width: number
-}
+import { max, values as _values } from 'lodash'
+import { ActivityProps } from '../types'
 
 const Bar = styled.div`
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.1);
   border-top: 1px solid rgba(255, 255, 255, 0.3);
+  border-left: 1px solid rgba(255, 255, 255, 0.3);
   position: absolute;
   bottom: 0;
+  transition: height 250ms;
 `
 
-const Activity: FC<ActivityProps> = ({ data, width }) => {
-  if (data.length === 0) return null
+const Activity: FC<ActivityProps & { width: number }> = ({ values, width }) => {
+  const keys = Object.keys(values)
+  if (keys.length === 0) return null
 
-  const activity: { [date: string]: number } = mapValues(
-    groupBy(data, 'date_mutation'),
-    (x) => x.length
-  )
-  const keys = Object.keys(activity)
-  const start = min(keys)
-  const end = max(keys)
-  if (!start || !end) return null
-  const range = dayRange(start, end)
-  range.forEach((day) => {
-    if (!activity[day]) activity[day] = 0
-  })
   const height = 200
-  const maxValue = max(values(activity)) || 0
-  const barCount = keys.length
-  const barWidth = Math.floor(width / barCount)
+  const maxValue = max(_values(values)) || 0
+  const barWidth = Math.floor(width / keys.length)
 
   return (
     <div style={{ height, width }}>
-      {Object.keys(activity)
+      {Object.keys(values)
         .sort()
         .map((date: string, i: number) => {
-          const value = activity[date]
-          return value === 0 ? null : (
+          const value = values[date]
+          return (
             <Bar
               title={`${date}:${value}`}
               key={date}
               style={{
                 left: (barWidth + 1) * i,
                 width: barWidth,
-                height: (value / maxValue) * height - 1,
+                height: Math.max((value / maxValue) * height - 1, 0),
               }}
             />
           )

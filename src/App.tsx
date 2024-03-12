@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import { debounce } from 'lodash'
 import Map from 'react-map-gl'
 import styled from 'styled-components'
@@ -13,6 +13,7 @@ import { WebMercatorViewport } from '@deck.gl/core/typed'
 import { ScatterplotLayer } from '@deck.gl/layers/typed'
 import Activity from './components/Activity'
 import Counter from './components/Counter'
+import { north, south, east, west } from './constants'
 
 const mapStyle = generateMapStyle()
 
@@ -35,33 +36,27 @@ const Loader = styled.div`
 
 function App() {
   const { width, height } = useWindowSize()
-  const [bounds, setBounds] = useState([-10, 50, 10, 41])
-  const { loading, data, localData } = useCSV(
-    'http://localhost:5173/full.csv',
-    bounds
-  )
+  const [bounds, setBounds] = useState([east, north, west, south])
+  const { loading, data } = useCSV('http://localhost:5173/full.csv', bounds)
 
-  const layers = useMemo(
-    () => [
-      new ScatterplotLayer({
-        id: 'scatterplot-layer',
-        data,
-        radiusUnit: 'meters',
-        pickable: false,
-        filled: true,
-        stroked: false,
-        opacity: 0.2,
-        radiusScale: 6,
-        lineWidthMinPixels: 0.5,
-        radiusMinPixels: 0.3,
-        radiusMaxPixels: 10,
-        getPosition: (d) => [d.longitude, d.latitude],
-        getRadius: (d) => d.valeur_fonciere / 100000,
-        getColor: () => [200, 200, 255],
-      }),
-    ],
-    [data]
-  )
+  const layers = [
+    new ScatterplotLayer({
+      id: 'scatterplot-layer',
+      data: data?.map?.items || [],
+      radiusUnit: 'meters',
+      pickable: false,
+      filled: true,
+      stroked: false,
+      opacity: 0.2,
+      radiusScale: 6,
+      lineWidthMinPixels: 0.5,
+      radiusMinPixels: 0.3,
+      radiusMaxPixels: 10,
+      getPosition: (d) => [d.longitude, d.latitude],
+      getRadius: (d) => d.valeur_fonciere / 100000,
+      getColor: () => [200, 200, 255],
+    }),
+  ]
 
   if (!width || !height) return
 
@@ -69,8 +64,8 @@ function App() {
     width,
     height,
   }).fitBounds([
-    [-10, 50],
-    [10, 41],
+    [east, north],
+    [west, south],
   ])
   const { longitude, latitude, zoom } = viewport
 
@@ -107,8 +102,8 @@ function App() {
           mapStyle={mapStyle}
         />
       </DeckGL>
-      <Activity width={width} data={localData} />
-      <Counter data={localData} />
+      {data?.activity && <Activity width={width} {...data.activity} />}
+      {data?.counter && <Counter {...data.counter} />}
       {loading && <Loader>loading...</Loader>}
     </Container>
   )

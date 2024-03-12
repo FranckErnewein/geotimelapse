@@ -1,5 +1,5 @@
 export interface Item {
-  date: string
+  date_mutation: string
   longitude: number
   latitude: number
   [key: string]: string | number | boolean | null | undefined
@@ -7,7 +7,25 @@ export interface Item {
 
 export type WorkerParams = string | number[]
 
-export interface WorkerAnwser {
-  type: 'global' | 'local'
+export interface MapProps {
   items: Item[]
+}
+
+export interface ActivityProps {
+  startDate: string
+  endDate: string
+  values: {
+    [time: string]: number
+  }
+}
+
+export interface CounterProps {
+  count: number
+  amount: number
+}
+
+export interface WorkerAnwser {
+  map?: MapProps
+  activity?: ActivityProps
+  counter?: CounterProps
 }

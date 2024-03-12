@@ -1,11 +1,7 @@
 import { FC } from 'react'
 import styled from 'styled-components'
 import { sum } from 'lodash'
-import { Item } from '../hooks/useCSV'
-
-interface CounterProps {
-  data: Item[]
-}
+import { CounterProps } from '../types'
 
 const Container = styled.div`
   position: absolute;
@@ -28,11 +24,9 @@ function formatNumber(x: number): string {
   }, '')
 }
 
-const Counter: FC<CounterProps> = ({ data }) => {
-  const count = data.length
+const Counter: FC<CounterProps> = ({ count, amount }) => {
   if (count === 0) return null
 
-  const amount = Math.round(sum(data.map((item) => item.valeur_fonciere || 0)))
   return (
     <Container>
       <div>
