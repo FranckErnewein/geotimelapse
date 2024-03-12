@@ -1,6 +1,7 @@
 import { FC } from 'react'
 import styled from 'styled-components'
 import { CounterProps } from '../types'
+import formatNumber from '../utils/formatNumber'
 
 const Container = styled.div`
   position: absolute;
@@ -15,13 +16,6 @@ const Container = styled.div`
     padding-top: 5px;
   }
 `
-
-function formatNumber(x: number): string {
-  const chars = x.toString().split('').reverse()
-  return chars.reduce((memo, n, i) => {
-    return i % 3 === 0 ? `${n} ${memo}` : n + memo
-  }, '')
-}
 
 const Counter: FC<CounterProps> = ({ count, amount }) => {
   if (count === 0) return null

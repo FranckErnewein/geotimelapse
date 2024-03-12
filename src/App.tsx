@@ -8,11 +8,13 @@ import generateMapStyle from './generateMapStyle'
 import { useWindowSize } from '@uidotdev/usehooks'
 
 import useCSV from './hooks/useCSV'
+import { Item } from './types'
 import DeckGL from '@deck.gl/react/typed'
 import { WebMercatorViewport } from '@deck.gl/core/typed'
 import { ScatterplotLayer } from '@deck.gl/layers/typed'
 import Activity from './components/Activity'
 import Counter from './components/Counter'
+import Details from './components/Details'
 import { north, south, east, west } from './constants'
 
 const mapStyle = generateMapStyle()
@@ -21,7 +23,7 @@ const MAPBOX_TOKEN =
   'pk.eyJ1IjoiZnJhbmNrZXJuZXdlaW4iLCJhIjoiYXJLM0dISSJ9.mod0ppb2kjzuMy8j1pl0Bw'
 
 const Container = styled.div`
-  font-family: sans-serif;
+  font-family: monospace;
   background: black;
   position: relative;
 `
@@ -36,16 +38,17 @@ const Loader = styled.div`
 
 function App() {
   const { width, height } = useWindowSize()
+  const [details, setDetails] = useState<Item>()
   const [bounds, setBounds] = useState([east, north, west, south])
   const { data } = useCSV('http://localhost:5173/full.csv', bounds)
 
   const layers = [
     new ScatterplotLayer({
       id: 'scatterplot-layer',
-      onHover: (d) => console.log(d),
+      onHover: ({ object }) => setDetails(object),
       data: data?.map?.items || [],
       radiusUnit: 'meters',
-      pickable: false,
+      pickable: true,
       filled: true,
       stroked: false,
       opacity: 0.2,
@@ -103,6 +106,7 @@ function App() {
           mapStyle={mapStyle}
         />
       </DeckGL>
+      {details && <Details item={details} />}
       {data.activity && <Activity width={width} {...data.activity} />}
       {data.counter && <Counter {...data.counter} />}
       {data.loading && <Loader>{data.loading} lines loaded</Loader>}
