@@ -1,5 +1,5 @@
 import { parse, Parser } from 'papaparse'
-import { Item, WorkerParams, WorkerAnwser } from './types'
+import { Item, CSVLine, WorkerParams, WorkerAnwser } from './types'
 import { sum, mapValues, groupBy, uniqBy, sortBy } from 'lodash'
 import dayRange from './utils/dayRange'
 
@@ -21,21 +21,15 @@ function filterBoundedData(data: Item[], bounds: number[]): Item[] {
 
 function getWidgetData(data: Item[], bounds: number[]): WorkerAnwser {
   const localItems = filterBoundedData(data, bounds)
-  const activityValues = mapValues(
-    groupBy(localItems, 'date_mutation'),
-    (x) => x.length
-  )
-  const startDate = data[0]?.date_mutation?.toString() || '2023-01-01'
-  const endDate =
-    data[data.length - 2]?.date_mutation?.toString() || '2023-01-03'
+  const activityValues = mapValues(groupBy(localItems, 'date'), (x) => x.length)
+  const startDate = data[0]?.date?.toString() || '2023-01-01'
+  const endDate = data[data.length - 2]?.date?.toString() || '2023-01-03'
 
   dayRange(startDate, endDate).forEach((date) => {
     if (!activityValues[date]) activityValues[date] = 0
   })
 
-  const amount = Math.round(
-    sum(localItems.map((item) => item.valeur_fonciere || 0))
-  )
+  const amount = Math.round(sum(localItems.map((item) => item.value || 0)))
 
   return {
     activity: {
@@ -55,26 +49,41 @@ self.onmessage = (e: MessageEvent<WorkerParams>) => {
     url = e.data
     items = []
     if (parser) parser.abort()
-
-    parse<Item>(url, {
+    parse<CSVLine>(url, {
       download: true,
       dynamicTyping: true,
       header: true,
       chunk: (r, p) => {
         parser = p
-        items = items.concat(
-          uniqBy(
-            r.data.filter((item) => item.nature_mutation === 'Vente'),
-            'id_mutation'
-          )
-        )
+        r.data.forEach((line) => {
+          if (
+            line.nature_mutation === 'Vente' &&
+            typeof line.id_mutation === 'string' &&
+            typeof line.date_mutation === 'string' &&
+            typeof line.valeur_fonciere === 'number' &&
+            typeof line.longitude === 'number' &&
+            typeof line.latitude === 'number'
+          ) {
+            items.push({
+              id: line.id_mutation,
+              value: line.valeur_fonciere,
+              longitude: line.longitude,
+              latitude: line.latitude,
+              date: line.date_mutation,
+            })
+          }
+        })
+        self.postMessage({
+          loading: items.length,
+        })
         // p.abort()
       },
       complete: () => {
         parser = null
-        items = sortBy(uniqBy(items, 'id_mutation'), 'date_mutation')
+        items = sortBy(uniqBy(items, 'id'), 'date')
         self.postMessage({
           map: { items },
+          loading: undefined,
           ...getWidgetData(items, bounds),
         })
       },

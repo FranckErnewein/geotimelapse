@@ -1,6 +1,5 @@
 import { FC } from 'react'
 import styled from 'styled-components'
-import { sum } from 'lodash'
 import { CounterProps } from '../types'
 
 const Container = styled.div`

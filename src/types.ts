@@ -1,8 +1,13 @@
 export interface Item {
-  date_mutation: string
+  id: string
+  date: string
   longitude: number
   latitude: number
-  [key: string]: string | number | boolean | null | undefined
+  value: number
+}
+
+export interface CSVLine {
+  [key: string]: number | string
 }
 
 export type WorkerParams = string | number[]
@@ -28,4 +33,5 @@ export interface WorkerAnwser {
   map?: MapProps
   activity?: ActivityProps
   counter?: CounterProps
+  loading?: number
 }

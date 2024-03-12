@@ -37,11 +37,12 @@ const Loader = styled.div`
 function App() {
   const { width, height } = useWindowSize()
   const [bounds, setBounds] = useState([east, north, west, south])
-  const { loading, data } = useCSV('http://localhost:5173/full.csv', bounds)
+  const { data } = useCSV('http://localhost:5173/full.csv', bounds)
 
   const layers = [
     new ScatterplotLayer({
       id: 'scatterplot-layer',
+      onHover: (d) => console.log(d),
       data: data?.map?.items || [],
       radiusUnit: 'meters',
       pickable: false,
@@ -53,7 +54,7 @@ function App() {
       radiusMinPixels: 0.3,
       radiusMaxPixels: 10,
       getPosition: (d) => [d.longitude, d.latitude],
-      getRadius: (d) => d.valeur_fonciere / 100000,
+      getRadius: (d) => d.value / 100000,
       getColor: () => [200, 200, 255],
     }),
   ]
@@ -102,9 +103,9 @@ function App() {
           mapStyle={mapStyle}
         />
       </DeckGL>
-      {data?.activity && <Activity width={width} {...data.activity} />}
-      {data?.counter && <Counter {...data.counter} />}
-      {loading && <Loader>loading...</Loader>}
+      {data.activity && <Activity width={width} {...data.activity} />}
+      {data.counter && <Counter {...data.counter} />}
+      {data.loading && <Loader>{data.loading} lines loaded</Loader>}
     </Container>
   )
 }
