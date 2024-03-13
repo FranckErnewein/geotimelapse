@@ -1,7 +1,14 @@
 import { FC } from 'react'
-import styled from 'styled-components'
+import styled, { keyframes } from 'styled-components'
 import { max, values as _values } from 'lodash'
+import yMarker from '../utils/yMarker'
+import formatNumber from '../utils/formatNumber'
 import { ActivityProps } from '../types'
+
+const fadeIn = keyframes`
+  0% { opacity: 0 }
+  100% { opacity: 1 }
+`
 
 const Container = styled.div`
   background: rgba(0, 0, 0, 0.5);
@@ -20,6 +27,11 @@ const Mask = styled.div`
   left: 0;
 `
 
+const calculHeight =
+  (maxValue: number, height: number) =>
+  (value: number): number =>
+    Math.max((value / maxValue) * height - 1, 0)
+
 const Bar = styled.div`
   background: rgba(255, 255, 255, 0.1);
   border-top: 1px solid rgba(255, 255, 255, 0.3);
@@ -30,13 +42,13 @@ const Bar = styled.div`
 `
 
 const Mark = styled.div`
-  color: white;
-  border-bottom: 1px dotted white;
+  color: rgba(255, 255, 255, 0.4);
+  border-bottom: 1px dashed rgba(225, 255, 255, 0.2);
   position: absolute;
-  opacity: 0.3;
   left: 0;
   width: 100%;
   transition: bottom 250ms;
+  animation: 250ms linear 1 normal forwards ${fadeIn};
 `
 
 const Activity: FC<ActivityProps & { width: number }> = ({ values, width }) => {
@@ -44,18 +56,20 @@ const Activity: FC<ActivityProps & { width: number }> = ({ values, width }) => {
   if (keys.length === 0) return null
 
   const height = 200
-  const maxValue = Math.max(max(_values(values)) || 0, 10)
+  const maxValue = Math.max(max(_values(values)) || 0, 2)
   const barWidth = width / keys.length
-
-  const power10 = [1, 10, 100, 1000, 10000, 100000].find(
-    (p) => maxValue / p < 10 && maxValue / p > 1
-  )
-  const mark =
-    maxValue > 10 ? (power10 ? maxValue - (maxValue % power10) : 0) : 5
+  const getHeight = calculHeight(maxValue, height)
 
   return (
     <Container style={{ height, width }}>
       <Mask />
+      {yMarker(maxValue).map((mark, i) => {
+        return (
+          <Mark key={i} style={{ bottom: getHeight(mark) }}>
+            {formatNumber(mark)}
+          </Mark>
+        )
+      })}
       {Object.keys(values)
         .sort()
         .map((date: string, i: number) => {
@@ -67,14 +81,11 @@ const Activity: FC<ActivityProps & { width: number }> = ({ values, width }) => {
               style={{
                 left: barWidth * i,
                 width: barWidth - 2,
-                height: Math.max((value / maxValue) * height - 1, 0),
+                height: getHeight(value),
               }}
             />
           )
         })}
-      <Mark style={{ bottom: Math.max((mark / maxValue) * height - 1, 0) }}>
-        {mark}
-      </Mark>
     </Container>
   )
 }

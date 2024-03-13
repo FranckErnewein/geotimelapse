@@ -16,6 +16,7 @@ import Activity from './components/Activity'
 import Counter from './components/Counter'
 import Details from './components/Details'
 import { north, south, east, west } from './constants'
+import formatNumber from './utils/formatNumber'
 
 const mapStyle = generateMapStyle()
 
@@ -109,7 +110,9 @@ function App() {
       {details && <Details item={details} />}
       {data.activity && <Activity width={width} {...data.activity} />}
       {data.counter && <Counter {...data.counter} />}
-      {data.loading && <Loader>{data.loading} lines loaded</Loader>}
+      {data.loading && (
+        <Loader>{formatNumber(data.loading)} lines loaded</Loader>
+      )}
     </Container>
   )
 }
