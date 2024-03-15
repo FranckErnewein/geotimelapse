@@ -42,28 +42,38 @@ function App() {
   const [details, setDetails] = useState<Item>()
   const [bounds, setBounds] = useState([east, north, west, south])
   const { data } = useCSV('http://localhost:5173/full.csv', bounds)
+  const [toDate, setToDate] = useState<string>()
+  const [fromDate, setFromDate] = useState<string>()
+  if (!width || !height) return
+
+  const fromIndex =
+    fromDate && data.map
+      ? data.map.items.findIndex((item) => item.date >= fromDate)
+      : 0
+  const toIndex =
+    toDate && data.map
+      ? data.map.items.findIndex((item) => item.date >= toDate)
+      : data.map?.items.length || 0
 
   const layers = [
     new ScatterplotLayer({
       id: 'scatterplot-layer',
       onHover: ({ object }) => setDetails(object),
-      data: data?.map?.items || [],
+      data: data.map?.items.slice(fromIndex, toIndex) || [],
       radiusUnit: 'meters',
       pickable: true,
       filled: true,
       stroked: false,
-      opacity: 0.2,
       radiusScale: 6,
+      opacity: 0.3,
       lineWidthMinPixels: 0.5,
       radiusMinPixels: 0.3,
       radiusMaxPixels: 10,
       getPosition: (d) => [d.longitude, d.latitude],
       getRadius: (d) => d.value / 100000,
-      getColor: () => [200, 200, 255],
+      getFillColor: () => [200, 200, 255],
     }),
   ]
-
-  if (!width || !height) return
 
   const viewport = new WebMercatorViewport({
     width,
@@ -108,7 +118,16 @@ function App() {
         />
       </DeckGL>
       {details && <Details item={details} />}
-      {data.activity && <Activity width={width} {...data.activity} />}
+      {data.activity && (
+        <Activity
+          setToDate={setToDate}
+          setFromDate={setFromDate}
+          width={width}
+          from={fromDate}
+          to={toDate}
+          {...data.activity}
+        />
+      )}
       {data.counter && <Counter {...data.counter} />}
       {data.loading && (
         <Loader>{formatNumber(data.loading)} lines loaded</Loader>
