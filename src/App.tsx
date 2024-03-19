@@ -65,23 +65,28 @@ function App() {
       ? data.map.items.findIndex((item) => item.date >= toDate)
       : data.map?.items.length || 0
 
+  const truncatedData = data.map?.items.slice(fromIndex, toIndex) || []
+
   const layers = [
     new ScatterplotLayer({
       id: 'scatterplot-layer',
       onHover: ({ object }) => setDetails(object),
-      data: data.map?.items.slice(fromIndex, toIndex) || [],
+      data: truncatedData,
       radiusUnit: 'meters',
       pickable: true,
       filled: true,
       stroked: false,
       radiusScale: 6,
-      opacity: 0.3,
       lineWidthMinPixels: 0.5,
       radiusMinPixels: 0.3,
       radiusMaxPixels: 10,
       getPosition: (d) => [d.longitude, d.latitude],
-      getRadius: (d) => d.value / 100000,
-      getFillColor: () => [200, 200, 255],
+      getRadius: (d, x) => {
+        return (d.value / 1000000) * 10 * (x.index / truncatedData.length)
+      },
+      getFillColor: (_, x) => {
+        return [200, 200, 255, 200 * (x.index / truncatedData.length) + 10]
+      },
     }),
   ]
 
