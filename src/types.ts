@@ -16,12 +16,16 @@ export interface MapProps {
   items: Item[]
 }
 
+export interface ActivityDateItem {
+  date: string
+  count: number
+  value: number
+}
+
 export interface ActivityProps {
   startDate: string
   endDate: string
-  values: {
-    [time: string]: number
-  }
+  activity: ActivityDateItem[]
 }
 
 export interface CounterProps {

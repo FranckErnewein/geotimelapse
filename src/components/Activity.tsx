@@ -1,11 +1,11 @@
-import { FC } from 'react'
+import { FC, useState, useEffect, useRef } from 'react'
 import styled, { keyframes } from 'styled-components'
-import { max, values as _values } from 'lodash'
+import { max } from 'lodash'
 import { format, differenceInDays, addDays } from 'date-fns'
 import { DraggableCore } from 'react-draggable'
 import yMarker from '../utils/yMarker'
 import formatNumber from '../utils/formatNumber'
-import { ActivityProps } from '../types'
+import { ActivityProps, ActivityDateItem } from '../types'
 
 const fadeIn = keyframes`
   0% { opacity: 0 }
@@ -67,6 +67,10 @@ const FromDateMark = styled.div`
   border-right: 1px dotted rgba(225, 255, 255, 0.7);
 `
 
+const PlayButton = styled.button``
+
+const RewindButton = styled.button``
+
 const calculHeight =
   (maxValue: number, height: number) =>
   (value: number): number =>
@@ -80,15 +84,42 @@ const Activity: FC<
     setToDate: (date: string) => void
     setFromDate: (date: string) => void
   }
-> = ({ values, width, to, from, setToDate, setFromDate }) => {
-  const dates = Object.keys(values).sort()
-  if (dates.length === 0) return null
+> = ({ activity, width, to, from, setToDate, setFromDate }) => {
+  const [play, setPlay] = useState<boolean>(false)
+  const timeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  useEffect(() => {
+    clearInterval(timeout.current)
+    if (play) {
+      const lastDate = activity[activity.length - 1].date
+      if (lastDate && to >= lastDate) {
+        setPlay(false)
+        return
+      }
+      timeout.current = setTimeout(() => {
+        setFromDate(format(addDays(from, 1), 'yyyy-MM-dd'))
+        setToDate(format(addDays(to, 1), 'yyyy-MM-dd'))
+      }, 1000 / 18)
+    }
+    return () => clearInterval(timeout.current)
+  }, [play, setFromDate, setToDate, from, to, activity])
 
-  const dayWidth = Math.floor(width / dates.length)
-  const graphWidth = dayWidth * dates.length
+  if (activity.length === 0) return null
+
   const height = 200
-  const maxValue = Math.max(max(_values(values)) || 0, 2)
+  const firstDate = activity[0].date
+
+  const dayWidth = Math.floor(width / activity.length)
+  const graphWidth = dayWidth * activity.length
+
+  const maxValue = Math.max(max(activity.map((a) => a.count)) || 0, 2)
   const getHeight = calculHeight(maxValue, height)
+
+  const rewind = () => {
+    setFromDate(firstDate)
+    setToDate(
+      format(addDays(firstDate, -1 * differenceInDays(from, to)), 'yyyy-MM-dd')
+    )
+  }
 
   return (
     <Container
@@ -98,7 +129,6 @@ const Activity: FC<
         left: (width - graphWidth) / 2,
       }}
     >
-      <Mask />
       {yMarker(maxValue).map((mark, i) => {
         return (
           <Mark key={i} style={{ bottom: getHeight(mark) }}>
@@ -106,16 +136,15 @@ const Activity: FC<
           </Mark>
         )
       })}
-      {dates.map((date: string, i: number) => {
-        const value = values[date]
+      {activity.map(({ date, count }: ActivityDateItem, i: number) => {
         return (
           <Bar
-            title={`${date}:${value}`}
+            title={`${date}:${count}`}
             key={date}
             style={{
               left: dayWidth * i,
               width: dayWidth - 2,
-              height: getHeight(value),
+              height: getHeight(count),
             }}
           />
         )
@@ -123,25 +152,33 @@ const Activity: FC<
       <DraggableCore
         onDrag={(_, { x }) => {
           setToDate(
-            format(addDays(dates[0], Math.floor(x / dayWidth)), 'yyyy-MM-dd')
+            format(addDays(firstDate, Math.floor(x / dayWidth)), 'yyyy-MM-dd')
           )
         }}
       >
         <ToDateMark
-          style={{ left: differenceInDays(to, dates[0]) * dayWidth }}
+          style={{ left: differenceInDays(to, firstDate) * dayWidth }}
         />
       </DraggableCore>
       <DraggableCore
         onDrag={(_, { x }) => {
           setFromDate(
-            format(addDays(dates[0], Math.floor(x / dayWidth)), 'yyyy-MM-dd')
+            format(addDays(firstDate, Math.floor(x / dayWidth)), 'yyyy-MM-dd')
           )
         }}
       >
         <FromDateMark
-          style={{ left: differenceInDays(from, dates[0]) * dayWidth }}
+          style={{ left: differenceInDays(from, firstDate) * dayWidth }}
         />
       </DraggableCore>
+      <Mask>
+        <PlayButton onClick={() => setPlay(!play)}>
+          {play ? 'Pause' : 'Play'}
+        </PlayButton>
+        {!play && from !== firstDate && (
+          <RewindButton onClick={rewind}>Rewind</RewindButton>
+        )}
+      </Mask>
     </Container>
   )
 }

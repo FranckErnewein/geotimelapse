@@ -21,12 +21,21 @@ function filterBoundedData(data: Item[], bounds: number[]): Item[] {
 
 function getWidgetData(data: Item[], bounds: number[]): WorkerAnwser {
   const localItems = filterBoundedData(data, bounds)
-  const activityValues = mapValues(groupBy(localItems, 'date'), (x) => x.length)
+  const activityValues = mapValues(groupBy(localItems, 'date'), (items) => {
+    return {
+      count: items.length,
+      value: sum(items.map((item) => item.value)),
+    }
+  })
   const startDate = data[0]?.date?.toString() || '2023-01-01'
   const endDate = data[data.length - 2]?.date?.toString() || '2023-01-03'
 
   dayRange(startDate, endDate).forEach((date) => {
-    if (!activityValues[date]) activityValues[date] = 0
+    if (!activityValues[date])
+      activityValues[date] = {
+        count: 0,
+        value: 0,
+      }
   })
 
   const amount = Math.round(sum(localItems.map((item) => item.value || 0)))
@@ -35,7 +44,12 @@ function getWidgetData(data: Item[], bounds: number[]): WorkerAnwser {
     activity: {
       startDate,
       endDate,
-      values: activityValues,
+      activity: Object.keys(activityValues)
+        .sort()
+        .map((date) => ({
+          date,
+          ...activityValues[date],
+        })),
     },
     counter: {
       count: localItems.length,

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { debounce } from 'lodash'
 import Map from 'react-map-gl'
 import styled from 'styled-components'
@@ -6,6 +6,7 @@ import './index.css'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import generateMapStyle from './generateMapStyle'
 import { useWindowSize } from '@uidotdev/usehooks'
+import { format, addDays } from 'date-fns'
 
 import useCSV from './hooks/useCSV'
 import { Item } from './types'
@@ -42,8 +43,17 @@ function App() {
   const [details, setDetails] = useState<Item>()
   const [bounds, setBounds] = useState([east, north, west, south])
   const { data } = useCSV('http://localhost:5173/full.csv', bounds)
-  const [toDate, setToDate] = useState<string>()
-  const [fromDate, setFromDate] = useState<string>()
+  const [fromDate, setFromDate] = useState<string | undefined>()
+  const [toDate, setToDate] = useState<string | undefined>()
+
+  useEffect(() => {
+    if (data.map?.items[0]) {
+      const firstDate = data.map.items[0].date
+      setFromDate(firstDate)
+      setToDate(format(addDays(firstDate, 30), 'yyyy-MM-dd'))
+    }
+  }, [data.map])
+
   if (!width || !height) return
 
   const fromIndex =
@@ -118,7 +128,7 @@ function App() {
         />
       </DeckGL>
       {details && <Details item={details} />}
-      {data.activity && (
+      {data.activity && fromDate && toDate && (
         <Activity
           setToDate={setToDate}
           setFromDate={setFromDate}
