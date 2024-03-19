@@ -28,14 +28,8 @@ export interface ActivityProps {
   activity: ActivityDateItem[]
 }
 
-export interface CounterProps {
-  count: number
-  amount: number
-}
-
 export interface WorkerAnwser {
   map?: MapProps
   activity?: ActivityProps
-  counter?: CounterProps
   loading?: number
 }

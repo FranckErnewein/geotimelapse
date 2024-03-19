@@ -85,6 +85,27 @@ function App() {
     }),
   ]
 
+  const fromActivityIndex =
+    fromDate && data.activity
+      ? data.activity.activity.findIndex((item) => item.date >= fromDate)
+      : 0
+  const toActivityIndex =
+    toDate && data.activity
+      ? data.activity?.activity.findIndex((item) => item.date >= toDate)
+      : 0
+  const truncatedActivity = data.activity
+    ? data.activity.activity.slice(fromActivityIndex, toActivityIndex)
+    : []
+  const counterProps = truncatedActivity.reduce(
+    (memo, act) => {
+      return {
+        count: memo.count + act.count,
+        value: memo.value + act.value,
+      }
+    },
+    { count: 0, value: 0 }
+  )
+
   const viewport = new WebMercatorViewport({
     width,
     height,
@@ -138,7 +159,7 @@ function App() {
           {...data.activity}
         />
       )}
-      {data.counter && <Counter {...data.counter} />}
+      {data.activity?.activity && <Counter {...counterProps} />}
       {data.loading && (
         <Loader>{formatNumber(data.loading)} lines loaded</Loader>
       )}

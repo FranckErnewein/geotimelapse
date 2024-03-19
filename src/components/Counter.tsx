@@ -1,7 +1,11 @@
 import { FC } from 'react'
 import styled from 'styled-components'
-import { CounterProps } from '../types'
 import formatNumber from '../utils/formatNumber'
+
+export interface CounterProps {
+  count: number
+  value: number
+}
 
 const Container = styled.div`
   position: absolute;
@@ -17,7 +21,7 @@ const Container = styled.div`
   }
 `
 
-const Counter: FC<CounterProps> = ({ count, amount }) => {
+const Counter: FC<CounterProps> = ({ count, value }) => {
   if (count === 0) return null
 
   return (
@@ -30,12 +34,12 @@ const Counter: FC<CounterProps> = ({ count, amount }) => {
       <div>
         Montant total:
         <br />
-        {formatNumber(amount)}€
+        {formatNumber(value)}€
       </div>
       <div>
         Prix moyen:
         <br />
-        {formatNumber(Math.round(amount / count))}€
+        {formatNumber(Math.round(value / count))}€
       </div>
     </Container>
   )

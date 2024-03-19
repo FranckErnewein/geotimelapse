@@ -38,8 +38,6 @@ function getWidgetData(data: Item[], bounds: number[]): WorkerAnwser {
       }
   })
 
-  const amount = Math.round(sum(localItems.map((item) => item.value || 0)))
-
   return {
     activity: {
       startDate,
@@ -50,10 +48,6 @@ function getWidgetData(data: Item[], bounds: number[]): WorkerAnwser {
           date,
           ...activityValues[date],
         })),
-    },
-    counter: {
-      count: localItems.length,
-      amount,
     },
   }
 }
@@ -80,7 +74,7 @@ self.onmessage = (e: MessageEvent<WorkerParams>) => {
           ) {
             items.push({
               id: line.id_mutation,
-              value: line.valeur_fonciere,
+              value: Math.round(line.valeur_fonciere),
               longitude: line.longitude,
               latitude: line.latitude,
               date: line.date_mutation,
