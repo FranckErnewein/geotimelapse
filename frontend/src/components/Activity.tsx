@@ -87,8 +87,9 @@ const Activity: FC<
 > = ({ activity, width, to, from, setToDate, setFromDate }) => {
   const [play, setPlay] = useState<boolean>(false)
   const timeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+
   useEffect(() => {
-    clearInterval(timeout.current)
+    clearTimeout(timeout.current)
     if (play) {
       const lastDate = activity[activity.length - 1].date
       if (lastDate && to >= lastDate) {
@@ -100,12 +101,12 @@ const Activity: FC<
         setToDate(format(addDays(to, 1), 'yyyy-MM-dd'))
       }, 1000 / 18)
     }
-    return () => clearInterval(timeout.current)
+    return () => clearTimeout(timeout.current)
   }, [play, setFromDate, setToDate, from, to, activity])
 
   if (activity.length === 0) return null
 
-  const height = 200
+  const height = 180
   const firstDate = activity[0].date
 
   const dayWidth = Math.floor(width / activity.length)
