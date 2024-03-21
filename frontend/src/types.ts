@@ -1,3 +1,18 @@
+export interface Config {
+  id: string
+  csv: string
+  fields: {
+    id: string
+    date: string
+    latitude: string
+    longitude: string
+    value: string
+  }
+  filters?: {
+    [key: string]: string
+  }
+}
+
 export interface Item {
   id: string
   date: string

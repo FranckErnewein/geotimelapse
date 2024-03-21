@@ -8,7 +8,7 @@ import generateMapStyle from './generateMapStyle'
 import { useWindowSize } from '@uidotdev/usehooks'
 import { format, addDays } from 'date-fns'
 
-import useCSV from './hooks/useCSV'
+import useConfig from './hooks/useConfig'
 import { Item } from './types'
 import DeckGL from '@deck.gl/react/typed'
 import { WebMercatorViewport } from '@deck.gl/core/typed'
@@ -42,7 +42,7 @@ function App() {
   const { width, height } = useWindowSize()
   const [details, setDetails] = useState<Item>()
   const [bounds, setBounds] = useState([east, north, west, south])
-  const { data } = useCSV('http://localhost:5173/full.csv', bounds)
+  const { data } = useConfig('d320d734-9e67-415b-b12d-daa0dc696b90', bounds)
   const [fromDate, setFromDate] = useState<string | undefined>()
   const [toDate, setToDate] = useState<string | undefined>()
 

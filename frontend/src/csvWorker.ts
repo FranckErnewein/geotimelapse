@@ -1,11 +1,11 @@
 import { parse, Parser } from 'papaparse'
-import { Item, CSVLine, WorkerParams, WorkerAnwser } from './types'
+import { Item, CSVLine, WorkerParams, WorkerAnwser, Config } from './types'
 import { sum, mapValues, groupBy, uniqBy, sortBy } from 'lodash'
 import dayRange from './utils/dayRange'
 
 let parser: null | Parser = null
 let items: Item[] = []
-let url: null | string = null
+let id: null | string = null
 let bounds: number[] = [-10, 41, 10, 50]
 
 function filterBoundedData(data: Item[], bounds: number[]): Item[] {
@@ -53,49 +53,59 @@ function getWidgetData(data: Item[], bounds: number[]): WorkerAnwser {
 }
 
 self.onmessage = (e: MessageEvent<WorkerParams>) => {
-  if (typeof e.data === 'string' && e.data !== url) {
-    url = e.data
+  if (typeof e.data === 'string' && e.data !== id) {
+    console.log('rdy to fetch')
+    id = e.data
     items = []
     if (parser) parser.abort()
-    parse<CSVLine>(url, {
-      download: true,
-      dynamicTyping: true,
-      header: true,
-      chunk: (r, p) => {
-        parser = p
-        r.data.forEach((line) => {
-          if (
-            line.nature_mutation === 'Vente' &&
-            typeof line.id_mutation === 'string' &&
-            typeof line.date_mutation === 'string' &&
-            typeof line.valeur_fonciere === 'number' &&
-            typeof line.longitude === 'number' &&
-            typeof line.latitude === 'number'
-          ) {
-            items.push({
-              id: line.id_mutation,
-              value: Math.round(line.valeur_fonciere),
-              longitude: line.longitude,
-              latitude: line.latitude,
-              date: line.date_mutation,
+    fetch(`http://localhost:5001/config/${id}`)
+      .then((r) => r.json())
+      .then((config: Config) => {
+        parse<CSVLine>(config.csv, {
+          download: true,
+          dynamicTyping: true,
+          header: true,
+          chunk: (r, p) => {
+            parser = p
+            r.data.forEach((line) => {
+              const id = line[config.fields.id]
+              const date = line[config.fields.date]
+              const value = line[config.fields.value]
+              const longitude = line[config.fields.longitude]
+              const latitude = line[config.fields.latitude]
+              if (
+                line.nature_mutation === 'Vente' && //TODO make it dynamic
+                typeof id === 'string' &&
+                typeof date === 'string' &&
+                typeof value === 'number' &&
+                typeof longitude === 'number' &&
+                typeof latitude === 'number'
+              ) {
+                items.push({
+                  id,
+                  longitude,
+                  latitude,
+                  date,
+                  value: Math.round(value),
+                })
+              }
             })
-          }
+            self.postMessage({
+              loading: items.length,
+            })
+            // p.abort()
+          },
+          complete: () => {
+            parser = null
+            items = sortBy(uniqBy(items, 'id'), 'date')
+            self.postMessage({
+              map: { items },
+              loading: undefined,
+              ...getWidgetData(items, bounds),
+            })
+          },
         })
-        self.postMessage({
-          loading: items.length,
-        })
-        // p.abort()
-      },
-      complete: () => {
-        parser = null
-        items = sortBy(uniqBy(items, 'id'), 'date')
-        self.postMessage({
-          map: { items },
-          loading: undefined,
-          ...getWidgetData(items, bounds),
-        })
-      },
-    })
+      })
   }
 
   if (
