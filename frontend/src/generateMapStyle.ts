@@ -1,4 +1,4 @@
-import * as Color from 'color'
+import Color from 'color'
 import * as mapStyle from './mapStyle.json'
 
 //.replace('#8f7c79', '#798f8b')

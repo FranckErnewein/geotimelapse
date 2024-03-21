@@ -11,12 +11,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@deck.gl/core": "^8.9.35",
-    "@deck.gl/layers": "^8.9.35",
+    "@deck.gl/core": "^9.0.0",
+    "@deck.gl/layers": "^9.0.0",
     "@uidotdev/usehooks": "^2.4.1",
     "color": "^4.2.3",
     "date-fns": "^3.3.1",
-    "deck.gl": "^8.9.35",
+    "deck.gl": "^9.0.0",
     "lodash": "^4.17.21",
     "mapbox-gl": "^3.2.0",
     "papaparse": "^5.4.1",
@@ -43,7 +43,7 @@
     "eslint-plugin-vitest": "^0.3.21",
     "prettier": "^3.2.4",
     "prettier-eslint": "^16.2.0",
-    "typescript": "^5.2.2",
+    "typescript": "^5.4.3",
     "vite": "^5.0.8",
     "vitest": "^1.2.2"
   }
