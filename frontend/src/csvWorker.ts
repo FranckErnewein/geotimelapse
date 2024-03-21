@@ -54,11 +54,10 @@ function getWidgetData(data: Item[], bounds: number[]): WorkerAnwser {
 
 self.onmessage = (e: MessageEvent<WorkerParams>) => {
   if (typeof e.data === 'string' && e.data !== id) {
-    console.log('rdy to fetch')
     id = e.data
     items = []
     if (parser) parser.abort()
-    fetch(`http://localhost:5001/config/${id}`)
+    fetch(`http://localhost:5000/api/config/${id}`)
       .then((r) => r.json())
       .then((config: Config) => {
         parse<CSVLine>(config.csv, {
