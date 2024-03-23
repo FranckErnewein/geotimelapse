@@ -1,5 +1,7 @@
 import json
-from flask import Flask, jsonify, abort
+import requests
+import zlib
+from flask import Flask, jsonify, abort, stream_with_context, Response
 from flask_cors import CORS
 
 app = Flask(__name__)
@@ -21,5 +23,26 @@ def config(id):
     for config in all_config:
         if(config['id'] == id):
             return jsonify(config)
-    abort(404) 
+    abort(404)
                  
+
+@app.route("/api/csv/<id>", methods=["GET"])
+def csv(id):
+    for config in all_config:
+        if(config['id'] == id):
+            url=config['csv']
+            csvResponse = requests.get(url, stream=True)
+            if csvResponse.status_code != 200:
+                abort(404)
+            decompressor = zlib.decompressobj(32 + zlib.MAX_WBITS)
+
+            def generate_decompressed_content():
+                for chunk in csvResponse.iter_content(chunk_size=1024):
+                    yield decompressor.decompress(chunk)
+                yield decompressor.flush()
+
+            response = Response(generate_decompressed_content(), mimetype='text/csv')
+            response.headers['Access-Control-Expose-Headers'] = 'Content-Range'
+            response.headers['Access-Control-Allow-Origin'] = '*'
+            return response
+    abort(404)

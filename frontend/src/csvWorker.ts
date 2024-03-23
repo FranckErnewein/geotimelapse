@@ -52,59 +52,59 @@ function getWidgetData(data: Item[], bounds: number[]): WorkerAnwser {
   }
 }
 
-self.onmessage = (e: MessageEvent<WorkerParams>) => {
+self.onmessage = async (e: MessageEvent<WorkerParams>) => {
   if (typeof e.data === 'string' && e.data !== id) {
     id = e.data
     items = []
     if (parser) parser.abort()
-    fetch(`http://localhost:5000/api/config/${id}`)
-      .then((r) => r.json())
-      .then((config: Config) => {
-        parse<CSVLine>(config.csv, {
-          download: true,
-          dynamicTyping: true,
-          header: true,
-          chunk: (r, p) => {
-            parser = p
-            r.data.forEach((line) => {
-              const id = line[config.fields.id]
-              const date = line[config.fields.date]
-              const value = line[config.fields.value]
-              const longitude = line[config.fields.longitude]
-              const latitude = line[config.fields.latitude]
-              if (
-                line.nature_mutation === 'Vente' && //TODO make it dynamic
-                typeof id === 'string' &&
-                typeof date === 'string' &&
-                typeof value === 'number' &&
-                typeof longitude === 'number' &&
-                typeof latitude === 'number'
-              ) {
-                items.push({
-                  id,
-                  longitude,
-                  latitude,
-                  date,
-                  value: Math.round(value),
-                })
-              }
-            })
-            self.postMessage({
-              loading: items.length,
-            })
-            // p.abort()
-          },
-          complete: () => {
-            parser = null
-            items = sortBy(uniqBy(items, 'id'), 'date')
-            self.postMessage({
-              map: { items },
-              loading: undefined,
-              ...getWidgetData(items, bounds),
-            })
-          },
+    const configUrl = `http://localhost:5000/api/config/${id}`
+    const config: Config = await fetch(configUrl).then((r) => r.json())
+    const csvUrl = `http://localhost:5000/api/csv/${id}`
+    parse<CSVLine>(csvUrl, {
+      download: true,
+      dynamicTyping: true,
+      header: true,
+      step: (r, p) => {
+        parser = p
+        const line = r.data
+        const id = line[config.fields.id]
+        const date = line[config.fields.date]
+        const value = line[config.fields.value]
+        const longitude = line[config.fields.longitude]
+        const latitude = line[config.fields.latitude]
+        if (
+          line.nature_mutation === 'Vente' && //TODO make it dynamic
+          typeof id === 'string' &&
+          typeof date === 'string' &&
+          typeof value === 'number' &&
+          typeof longitude === 'number' &&
+          typeof latitude === 'number'
+        ) {
+          items.push({
+            id,
+            longitude,
+            latitude,
+            date,
+            value: Math.round(value),
+          })
+        }
+        if (items.length % 1011 === 0) {
+          self.postMessage({
+            loading: items.length,
+          })
+        }
+        // p.abort()
+      },
+      complete: () => {
+        parser = null
+        items = sortBy(uniqBy(items, 'id'), 'date')
+        self.postMessage({
+          map: { items },
+          loading: undefined,
+          ...getWidgetData(items, bounds),
         })
-      })
+      },
+    })
   }
 
   if (

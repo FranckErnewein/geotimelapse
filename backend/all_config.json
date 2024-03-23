@@ -1,7 +1,7 @@
 [
   {
     "id": "d320d734-9e67-415b-b12d-daa0dc696b90",
-    "csv": "http://localhost:5173/full.csv",
+    "csv": "https://files.data.gouv.fr/geo-dvf/latest/csv/2023/full.csv.gz",
     "fields": {
       "id": "id_mutation",
       "date": "date_mutation",

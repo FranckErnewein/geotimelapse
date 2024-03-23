@@ -3,3 +3,8 @@ services:
     build: ./backend/
     ports:
       - "5000:5000"
+
+  webapp:
+    build: ./frontend/
+    ports:
+      - "4173:4173"

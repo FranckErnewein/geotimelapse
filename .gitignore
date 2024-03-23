@@ -193,4 +193,5 @@ cython_debug/
 ## CUSTOM
 
 frontend/public/*.csv
+frontend/public/*.csv.gz
 
