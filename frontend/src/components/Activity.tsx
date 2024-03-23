@@ -1,5 +1,6 @@
 import { FC, useState, useEffect, useRef } from 'react'
 import styled, { keyframes } from 'styled-components'
+import { Play, Pause, Rewind } from 'lucide-react'
 import { max } from 'lodash'
 import { format, differenceInDays, addDays } from 'date-fns'
 import { DraggableCore } from 'react-draggable'
@@ -17,15 +18,6 @@ const Container = styled.div`
   border-bottom: 1px solid rgba(255, 255, 255, 0.3);
   position: absolute;
   bottom: 30px;
-  left: 0;
-`
-
-const Mask = styled.div`
-  background: black;
-  position: absolute;
-  width: 100%;
-  bottom: -30px;
-  height: 30px;
   left: 0;
 `
 
@@ -53,23 +45,56 @@ const ToDateMark = styled.div`
   position: absolute;
   height: 100%;
   top: 0;
-  width: 1px;
-  border-left: 1px solid rgba(225, 255, 255, 0.7);
-  border-right: 1px solid rgba(225, 255, 255, 0.7);
+  width: 4px;
+  margin-left: -2px;
+  background-color: rgba(255, 255, 255, 0.6);
+  cursor: ew-resize;
 `
 
 const FromDateMark = styled.div`
   position: absolute;
   height: 100%;
   top: 0;
-  width: 1px;
-  border-left: 1px dotted rgba(225, 255, 255, 0.7);
-  border-right: 1px dotted rgba(225, 255, 255, 0.7);
+  width: 4px;
+  margin-left: -2px;
+  background-color: rgba(255, 255, 255, 0.6);
+  cursor: ew-resize;
 `
 
-const PlayButton = styled.button``
+const FromToArea = styled.div`
+  position: absolute;
+  height: 100%;
+  top: 0;
+  cursor: move;
+  cursor: grab;
+  background-color: rgba(255, 255, 255, 0.1);
+  &:active {
+    cursor: grabbing;
+  }
+`
 
-const RewindButton = styled.button``
+const Controls = styled.div`
+  position: absolute;
+  width: 100%;
+  text-align: right;
+  bottom: 100%;
+  height: 30px;
+  left: 0;
+  line-height: 20px;
+`
+
+const Button = styled.button`
+  background: transparent;
+  border-radius: 3px;
+  border: 0 none;
+  opacity: 0.7;
+  cursor: pointer;
+  padding-left: 10px;
+  line-height: 20px;
+  &:disabled {
+    opacity: 0.2;
+  }
+`
 
 const calculHeight =
   (maxValue: number, height: number) =>
@@ -85,13 +110,14 @@ const Activity: FC<
     setFromDate: (date: string) => void
   }
 > = ({ activity, width, to, from, setToDate, setFromDate }) => {
-  const [play, setPlay] = useState<boolean>(false)
+  const [play, setPlay] = useState<boolean>(true)
   const timeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const dragOffsetX = useRef<number>(0)
+  const lastDate = activity[activity.length - 1].date
 
   useEffect(() => {
     clearTimeout(timeout.current)
     if (play) {
-      const lastDate = activity[activity.length - 1].date
       if (lastDate && to >= lastDate) {
         setPlay(false)
         return
@@ -102,7 +128,7 @@ const Activity: FC<
       }, 1000 / 18)
     }
     return () => clearTimeout(timeout.current)
-  }, [play, setFromDate, setToDate, from, to, activity])
+  }, [play, setFromDate, setToDate, from, to, activity, lastDate])
 
   if (activity.length === 0) return null
 
@@ -116,18 +142,25 @@ const Activity: FC<
   const getHeight = calculHeight(maxValue, height)
 
   const rewind = () => {
+    if (from === firstDate) return
     setFromDate(firstDate)
     setToDate(
       format(addDays(firstDate, -1 * differenceInDays(from, to)), 'yyyy-MM-dd')
     )
   }
 
+  const iconProps = { size: 24, color: 'white' }
+  const toLeft = differenceInDays(to, firstDate) * dayWidth
+  const fromLeft = differenceInDays(from, firstDate) * dayWidth
+  const daysDelta = differenceInDays(to, from)
+  const leftPosition = (width - graphWidth) / 2
+
   return (
     <Container
       style={{
         height,
         width: graphWidth,
-        left: (width - graphWidth) / 2,
+        left: leftPosition,
       }}
     >
       {yMarker(maxValue).map((mark, i) => {
@@ -152,14 +185,22 @@ const Activity: FC<
       })}
       <DraggableCore
         onDrag={(_, { x }) => {
+          const halfDaysDelta = Math.round(daysDelta / 2)
+          const date = addDays(firstDate, Math.floor(x / dayWidth))
+          setFromDate(format(addDays(date, -halfDaysDelta), 'yyyy-MM-dd'))
+          setToDate(format(addDays(date, halfDaysDelta), 'yyyy-MM-dd'))
+        }}
+      >
+        <FromToArea style={{ left: fromLeft, width: toLeft - fromLeft }} />
+      </DraggableCore>
+      <DraggableCore
+        onDrag={(_, { x }) => {
           setToDate(
             format(addDays(firstDate, Math.floor(x / dayWidth)), 'yyyy-MM-dd')
           )
         }}
       >
-        <ToDateMark
-          style={{ left: differenceInDays(to, firstDate) * dayWidth }}
-        />
+        <ToDateMark style={{ left: toLeft }} />
       </DraggableCore>
       <DraggableCore
         onDrag={(_, { x }) => {
@@ -168,18 +209,21 @@ const Activity: FC<
           )
         }}
       >
-        <FromDateMark
-          style={{ left: differenceInDays(from, firstDate) * dayWidth }}
-        />
+        <FromDateMark style={{ left: fromLeft }} />
       </DraggableCore>
-      <Mask>
-        <PlayButton onClick={() => setPlay(!play)}>
-          {play ? 'Pause' : 'Play'}
-        </PlayButton>
-        {!play && from !== firstDate && (
-          <RewindButton onClick={rewind}>Rewind</RewindButton>
-        )}
-      </Mask>
+      <Controls>
+        <Button
+          onClick={() => {
+            if (to !== lastDate) setPlay(!play)
+          }}
+          disabled={to === lastDate}
+        >
+          {play ? <Pause {...iconProps} /> : <Play {...iconProps} />}
+        </Button>
+        <Button onClick={rewind} disabled={from === firstDate}>
+          <Rewind {...iconProps} />
+        </Button>
+      </Controls>
     </Container>
   )
 }
