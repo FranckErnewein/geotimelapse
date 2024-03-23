@@ -1,15 +1,16 @@
-FROM node:20-slim-buster
+FROM node:20-buster-slim
 
 WORKDIR /app
 
 COPY package.json package.json
 COPY package-lock.json package-lock.json
+
 RUN npm install
 
 COPY . .
 
 RUN npm run build
 
-EXPOSE 3000
+EXPOSE 4173
 
-CMD [ "python3", "-m" , "flask", "run", "--host=0.0.0.0", "--port=5000"]
+CMD [ "npm", "run" , "preview"]
