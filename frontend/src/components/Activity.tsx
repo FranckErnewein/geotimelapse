@@ -3,10 +3,12 @@ import styled, { keyframes } from 'styled-components'
 import { Play, Pause, Rewind } from 'lucide-react'
 import { max } from 'lodash'
 import { format, differenceInDays, addDays } from 'date-fns'
-import { DraggableCore } from 'react-draggable'
+
+import ActivityFocusArea from './ActivityFocusArea'
+import { ActivityProps, ActivityDateItem } from '../types'
+import { frameRate } from '../constants'
 import yMarker from '../utils/yMarker'
 import formatNumber from '../utils/formatNumber'
-import { ActivityProps, ActivityDateItem } from '../types'
 
 const fadeIn = keyframes`
   0% { opacity: 0 }
@@ -22,12 +24,13 @@ const Container = styled.div`
 `
 
 const Bar = styled.div`
-  background: rgba(255, 255, 255, 0.1);
-  border-top: 1px solid rgba(255, 255, 255, 0.5);
-  border-left: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.2);
+  border-top: 1px solid rgba(255, 255, 255);
+  border-left: 1px solid rgba(255, 255, 255, 0.6);
   position: absolute;
   bottom: 0;
   transition: height 250ms;
+  opacity: 0.5;
 `
 
 const Mark = styled.div`
@@ -41,36 +44,14 @@ const Mark = styled.div`
   text-indent: 5px;
 `
 
-const ToDateMark = styled.div`
+const MarkDigit = styled.div`
   position: absolute;
-  height: 100%;
-  top: 0;
-  width: 4px;
-  margin-left: -2px;
-  background-color: rgba(255, 255, 255, 0.6);
-  cursor: ew-resize;
-`
-
-const FromDateMark = styled.div`
-  position: absolute;
-  height: 100%;
-  top: 0;
-  width: 4px;
-  margin-left: -2px;
-  background-color: rgba(255, 255, 255, 0.6);
-  cursor: ew-resize;
-`
-
-const FromToArea = styled.div`
-  position: absolute;
-  height: 100%;
-  top: 0;
-  cursor: move;
-  cursor: grab;
-  background-color: rgba(255, 255, 255, 0.1);
-  &:active {
-    cursor: grabbing;
-  }
+  width: 50px;
+  text-align: right;
+  left: -52px;
+  bottom: -6px;
+  font-size: 11px;
+  line-height: 12px;
 `
 
 const Controls = styled.div`
@@ -80,7 +61,6 @@ const Controls = styled.div`
   bottom: 100%;
   height: 30px;
   left: 0;
-  line-height: 20px;
 `
 
 const Button = styled.button`
@@ -90,7 +70,6 @@ const Button = styled.button`
   opacity: 0.7;
   cursor: pointer;
   padding-left: 10px;
-  line-height: 20px;
   &:disabled {
     opacity: 0.2;
   }
@@ -112,7 +91,6 @@ const Activity: FC<
 > = ({ activity, width, to, from, setToDate, setFromDate }) => {
   const [play, setPlay] = useState<boolean>(true)
   const timeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
-  const dragOffsetX = useRef<number>(0)
   const lastDate = activity[activity.length - 1].date
 
   useEffect(() => {
@@ -125,7 +103,7 @@ const Activity: FC<
       timeout.current = setTimeout(() => {
         setFromDate(format(addDays(from, 1), 'yyyy-MM-dd'))
         setToDate(format(addDays(to, 1), 'yyyy-MM-dd'))
-      }, 1000 / 18)
+      }, frameRate)
     }
     return () => clearTimeout(timeout.current)
   }, [play, setFromDate, setToDate, from, to, activity, lastDate])
@@ -149,11 +127,9 @@ const Activity: FC<
     )
   }
 
-  const iconProps = { size: 24, color: 'white' }
-  const toLeft = differenceInDays(to, firstDate) * dayWidth
-  const fromLeft = differenceInDays(from, firstDate) * dayWidth
-  const daysDelta = differenceInDays(to, from)
   const leftPosition = (width - graphWidth) / 2
+
+  const iconProps = { size: 24, color: 'white' }
 
   return (
     <Container
@@ -166,7 +142,7 @@ const Activity: FC<
       {yMarker(maxValue).map((mark, i) => {
         return (
           <Mark key={i} style={{ bottom: getHeight(mark) }}>
-            {formatNumber(mark)}
+            <MarkDigit>{formatNumber(mark)}</MarkDigit>
           </Mark>
         )
       })}
@@ -179,38 +155,22 @@ const Activity: FC<
               left: dayWidth * i,
               width: dayWidth - 2,
               height: getHeight(count),
+              opacity: date >= from && date <= to ? 1 : 0.4,
             }}
           />
         )
       })}
-      <DraggableCore
-        onDrag={(_, { x }) => {
-          const halfDaysDelta = Math.round(daysDelta / 2)
-          const date = addDays(firstDate, Math.floor(x / dayWidth))
-          setFromDate(format(addDays(date, -halfDaysDelta), 'yyyy-MM-dd'))
-          setToDate(format(addDays(date, halfDaysDelta), 'yyyy-MM-dd'))
+      <ActivityFocusArea
+        {...{
+          firstDate,
+          lastDate,
+          dayWidth,
+          from,
+          to,
+          setFromDate,
+          setToDate,
         }}
-      >
-        <FromToArea style={{ left: fromLeft, width: toLeft - fromLeft }} />
-      </DraggableCore>
-      <DraggableCore
-        onDrag={(_, { x }) => {
-          setToDate(
-            format(addDays(firstDate, Math.floor(x / dayWidth)), 'yyyy-MM-dd')
-          )
-        }}
-      >
-        <ToDateMark style={{ left: toLeft }} />
-      </DraggableCore>
-      <DraggableCore
-        onDrag={(_, { x }) => {
-          setFromDate(
-            format(addDays(firstDate, Math.floor(x / dayWidth)), 'yyyy-MM-dd')
-          )
-        }}
-      >
-        <FromDateMark style={{ left: fromLeft }} />
-      </DraggableCore>
+      />
       <Controls>
         <Button
           onClick={() => {
