@@ -9,6 +9,12 @@
       "longitude": "longitude",
       "value": "valeur_fonciere"
     },
+    "bounds": {
+      "north": 51,
+      "south": 40,
+      "east": -5,
+      "west": 8
+    },
     "filters": {
       "nature_mutation": "Vente"
     }

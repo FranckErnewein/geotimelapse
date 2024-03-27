@@ -19,7 +19,7 @@ const Container = styled.div`
   background: rgba(0, 0, 0, 0.5);
   border-bottom: 1px solid rgba(255, 255, 255, 0.3);
   position: absolute;
-  bottom: 30px;
+  bottom: 40px;
   left: 0;
 `
 
@@ -61,6 +61,7 @@ const Controls = styled.div`
   bottom: 100%;
   height: 30px;
   left: 0;
+  margin-bottom: 12px;
 `
 
 const Button = styled.button`
@@ -115,6 +116,7 @@ const Activity: FC<
 
   const dayWidth = Math.floor(width / activity.length)
   const graphWidth = dayWidth * activity.length
+  const leftPosition = (width - graphWidth) / 2
 
   const maxValue = Math.max(max(activity.map((a) => a.count)) || 0, 2)
   const getHeight = calculHeight(maxValue, height)
@@ -126,8 +128,6 @@ const Activity: FC<
       format(addDays(firstDate, -1 * differenceInDays(from, to)), 'yyyy-MM-dd')
     )
   }
-
-  const leftPosition = (width - graphWidth) / 2
 
   const iconProps = { size: 24, color: 'white' }
 

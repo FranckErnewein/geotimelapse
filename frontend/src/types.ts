@@ -1,13 +1,23 @@
+export interface ConfigFields {
+  id: string
+  date: string
+  latitude: string
+  longitude: string
+  value: string
+}
+
+export interface Bounds {
+  north: number
+  east: number
+  west: number
+  south: number
+}
+
 export interface Config {
   id: string
   csv: string
-  fields: {
-    id: string
-    date: string
-    latitude: string
-    longitude: string
-    value: string
-  }
+  fields: ConfigFields
+  bounds: Bounds
   filters?: {
     [key: string]: string
   }

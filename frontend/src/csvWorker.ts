@@ -1,11 +1,11 @@
 import { parse, Parser } from 'papaparse'
-import { Item, CSVLine, WorkerParams, WorkerAnwser, Config } from './types'
+import { Item, CSVLine, WorkerAnwser, Config } from './types'
 import { sum, mapValues, groupBy, uniqBy, sortBy } from 'lodash'
 import dayRange from './utils/dayRange'
 
 let parser: null | Parser = null
 let items: Item[] = []
-let id: null | string = null
+let config: null | Config = null
 let bounds: number[] = [-10, 41, 10, 50]
 
 function filterBoundedData(data: Item[], bounds: number[]): Item[] {
@@ -52,20 +52,32 @@ function getWidgetData(data: Item[], bounds: number[]): WorkerAnwser {
   }
 }
 
-self.onmessage = async (e: MessageEvent<WorkerParams>) => {
-  if (typeof e.data === 'string' && e.data !== id) {
-    id = e.data
-    items = []
+self.onmessage = async (e: MessageEvent<Config | string>) => {
+  if (
+    e.data &&
+    typeof e.data === 'object' &&
+    typeof e.data.id === 'string' &&
+    (!config || config.id !== e.data.id)
+  ) {
+    config = e.data
     if (parser) parser.abort()
-    const configUrl = `http://localhost:5000/api/config/${id}`
-    const config: Config = await fetch(configUrl).then((r) => r.json())
-    const csvUrl = `http://localhost:5000/api/csv/${id}`
+    items = []
+    self.postMessage({
+      map: { items },
+      loading: undefined,
+      activity: undefined,
+    })
+    const csvUrl = `http://localhost:5000/api/csv/${config.id}`
     parse<CSVLine>(csvUrl, {
       download: true,
       dynamicTyping: true,
       header: true,
       step: (r, p) => {
         parser = p
+        if (!config) {
+          parser.abort()
+          return
+        }
         const line = r.data
         const id = line[config.fields.id]
         const date = line[config.fields.date]
@@ -93,7 +105,6 @@ self.onmessage = async (e: MessageEvent<WorkerParams>) => {
             loading: items.length,
           })
         }
-        // p.abort()
       },
       complete: () => {
         parser = null
