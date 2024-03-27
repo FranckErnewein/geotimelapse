@@ -1,6 +1,8 @@
 import { addDays, format, isValid } from 'date-fns'
 
-export default function dayRange(start: string, end: string): string[] {
+export default function dayRange(_start: string, _end: string): string[] {
+  const start = format(_start, 'yyyy-MM-dd')
+  const end = format(_end, 'yyyy-MM-dd')
   if (!isValid(new Date(start))) throw `start date: ${start} is not valid`
   if (!isValid(new Date(end))) throw `end date: ${end} is not valid`
   if (start > end) throw `${start} is great than ${end}`
