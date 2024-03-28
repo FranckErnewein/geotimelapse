@@ -2,6 +2,7 @@
   {
     "id": "d320d734-9e67-415b-b12d-daa0dc696b90",
     "csv": "https://files.data.gouv.fr/geo-dvf/latest/csv/2023/full.csv.gz",
+    "gzip": true,
     "fields": {
       "id": "id_mutation",
       "date": "date_mutation",
@@ -17,6 +18,23 @@
     },
     "filters": {
       "nature_mutation": "Vente"
+    }
+  },
+  {
+    "id": "d09dde3d-ab78-44f2-be0a-004819ff6489",
+    "csv": "https://corgis-edu.github.io/corgis/datasets/csv/earthquakes/earthquakes.csv",
+    "fields": {
+      "id": "id",
+      "date": "time.full",
+      "latitude": "location.latitude",
+      "longitude": "location.longitude",
+      "value": "impact.magnitude"
+    },
+    "bounds": {
+      "north": 80,
+      "south": 80,
+      "east": -180,
+      "west": 180
     }
   }
 ]

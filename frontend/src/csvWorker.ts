@@ -2,6 +2,7 @@ import { parse, Parser } from 'papaparse'
 import { Item, CSVLine, WorkerAnwser, Config } from './types'
 import { sum, mapValues, groupBy, uniqBy, sortBy } from 'lodash'
 import dayRange from './utils/dayRange'
+import getActivity from './utils/getActivity'
 
 let parser: null | Parser = null
 let items: Item[] = []
@@ -20,36 +21,7 @@ function filterBoundedData(data: Item[], bounds: number[]): Item[] {
 }
 
 function getWidgetData(data: Item[], bounds: number[]): WorkerAnwser {
-  const localItems = filterBoundedData(data, bounds)
-  const activityValues = mapValues(groupBy(localItems, 'date'), (items) => {
-    return {
-      count: items.length,
-      value: sum(items.map((item) => item.value)),
-    }
-  })
-  const startDate = data[0]?.date?.toString() || '2023-01-01'
-  const endDate = data[data.length - 2]?.date?.toString() || '2023-01-03'
-
-  dayRange(startDate, endDate).forEach((date) => {
-    if (!activityValues[date])
-      activityValues[date] = {
-        count: 0,
-        value: 0,
-      }
-  })
-
-  return {
-    activity: {
-      startDate,
-      endDate,
-      activity: Object.keys(activityValues)
-        .sort()
-        .map((date) => ({
-          date,
-          ...activityValues[date],
-        })),
-    },
-  }
+  return { activity: getActivity(filterBoundedData(data, bounds)) }
 }
 
 self.onmessage = async (e: MessageEvent<Config | string>) => {
@@ -84,8 +56,10 @@ self.onmessage = async (e: MessageEvent<Config | string>) => {
         const value = line[config.fields.value]
         const longitude = line[config.fields.longitude]
         const latitude = line[config.fields.latitude]
+        for (const filter in config.filters) {
+          if (line[filter] !== config.filters[filter]) return
+        }
         if (
-          line.nature_mutation === 'Vente' && //TODO make it dynamic
           typeof id === 'string' &&
           typeof date === 'string' &&
           typeof value === 'number' &&

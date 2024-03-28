@@ -34,11 +34,17 @@ def csv(id):
             csvResponse = requests.get(url, stream=True)
             if csvResponse.status_code != 200:
                 abort(404)
+
+            #  content_encoding = csvResponse.headers.get('Content-Encoding', '')
+            #  is_gzip = content_encoding == 'gzip'
             decompressor = zlib.decompressobj(32 + zlib.MAX_WBITS)
 
             def generate_decompressed_content():
                 for chunk in csvResponse.iter_content(chunk_size=1024):
-                    yield decompressor.decompress(chunk)
+                    if 'gzip' in config:
+                        yield decompressor.decompress(chunk)
+                    else:
+                        yield chunk
                 yield decompressor.flush()
 
             response = Response(generate_decompressed_content(), mimetype='text/csv')
