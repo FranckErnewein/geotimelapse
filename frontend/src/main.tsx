@@ -12,6 +12,8 @@ import 'mapbox-gl/dist/mapbox-gl.css'
 import App from './App'
 import Dataset from './components/Dataset'
 
+console.log('app start')
+
 const router = createBrowserRouter(
   createRoutesFromElements(
     <Route path="/" element={<App />}>
