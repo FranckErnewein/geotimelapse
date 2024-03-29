@@ -25,7 +25,10 @@ def config(id):
         if(config['id'] == id):
             return jsonify(config)
     abort(404)
-                 
+
+@app.route("/api/configs/", methods=['GET'])
+def configs():
+    return jsonify(all_config)
 
 @app.route("/api/csv/<id>", methods=["GET"])
 def csv(id):
