@@ -1,4 +1,4 @@
-import { FC, useState, useEffect, useMemo } from 'react'
+import { FC, useState, useEffect } from 'react'
 import { debounce } from 'lodash'
 import Map from 'react-map-gl'
 import styled from 'styled-components'

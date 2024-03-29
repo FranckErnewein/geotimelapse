@@ -1,7 +1,6 @@
 import { parse, Parser } from 'papaparse'
 import { Item, CSVLine, WorkerAnwser, Config } from './types'
-import { sum, mapValues, groupBy, uniqBy, sortBy } from 'lodash'
-import dayRange from './utils/dayRange'
+import { uniqBy, sortBy } from 'lodash'
 import getActivity from './utils/getActivity'
 
 let parser: null | Parser = null
@@ -39,7 +38,7 @@ self.onmessage = async (e: MessageEvent<Config | string>) => {
       loading: undefined,
       activity: undefined,
     })
-    const csvUrl = `http://localhost:5000/api/csv/${config.id}`
+    const csvUrl = `${import.meta.env.VITE_API_URL}/api/csv/${config.id}`
     parse<CSVLine>(csvUrl, {
       download: true,
       dynamicTyping: true,

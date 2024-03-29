@@ -9,7 +9,7 @@ export default function useConfig(id?: string) {
   useEffect(() => {
     if (!id) return
     setLoading(true)
-    const configUrl = `http://localhost:5000/api/config/${id}`
+    const configUrl = `${import.meta.env.VITE_API_URL}/api/config/${id}`
     fetch(configUrl)
       .then((r) => r.json())
       .catch(() => {

@@ -1,6 +1,7 @@
 import json
 import requests
 import zlib
+import os
 from flask import Flask, jsonify, abort, stream_with_context, Response
 from flask_cors import CORS
 
@@ -52,3 +53,9 @@ def csv(id):
             response.headers['Access-Control-Allow-Origin'] = '*'
             return response
     abort(404)
+
+
+if __name__ == '__main__':
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port)
+        
