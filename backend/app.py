@@ -12,26 +12,26 @@ CORS(app)
 def not_found(e):
     return jsonify(code=404, name="Not Found", message="Ressource not found")
 
-@app.route("/api/ping", methods=['GET'])
+@app.route("/ping", methods=['GET'])
 def ping():
     return jsonify(ping="pong")
 
 with open('all_config.json') as all_config_file:
   all_config = json.load(all_config_file)
 
-@app.route("/api/config/<id>", methods=['GET'])
+@app.route("/config/<id>", methods=['GET'])
 def config(id):
     for config in all_config:
         if(config['id'] == id):
             return jsonify(config)
     abort(404)
 
-@app.route("/api/configs/", methods=['GET'])
+@app.route("/configs/", methods=['GET'])
 def configs():
     return jsonify(all_config)
 
 
-@app.route("/api/csv/<id>", methods=["GET"])
+@app.route("/csv/<id>", methods=["GET"])
 def csv(id):
     for config in all_config:
         if(config['id'] == id):
