@@ -10,5 +10,6 @@ services:
     build: ./frontend/
     environment:
       - API_URL=http://api:5000
+      - PORT=3000
     ports:
-      - 4173:4173
+      - 3000:3000
