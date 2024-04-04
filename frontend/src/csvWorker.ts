@@ -38,7 +38,7 @@ self.onmessage = async (e: MessageEvent<Config | string>) => {
       loading: undefined,
       activity: undefined,
     })
-    const csvUrl = `${import.meta.env.VITE_API_URL}/api/csv/${config.id}`
+    const csvUrl = `/api/csv/${config.id}`
     parse<CSVLine>(csvUrl, {
       download: true,
       dynamicTyping: true,

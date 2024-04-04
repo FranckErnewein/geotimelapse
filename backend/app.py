@@ -30,6 +30,7 @@ def config(id):
 def configs():
     return jsonify(all_config)
 
+
 @app.route("/api/csv/<id>", methods=["GET"])
 def csv(id):
     for config in all_config:

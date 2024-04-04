@@ -2,7 +2,7 @@ import { useQuery } from 'react-query'
 import { Link } from 'react-router-dom'
 import { Config } from '../types'
 
-const configsUrl = `${import.meta.env.VITE_API_URL}/api/configs`
+const configsUrl = `/api/configs`
 
 export default function Home() {
   const { data = [] } = useQuery<Config[]>([], () =>

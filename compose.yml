@@ -2,13 +2,13 @@ services:
   api:
     build: ./backend/
     environment:
-      - PORT=5001
+      - PORT=5000
     ports:
-      - 5001:5001
+      - 5000:5000
 
   webapp:
     build: ./frontend/
     environment:
-      - VITE_API_URL=http://localhost:5001
+      - API_URL=http://api:5000
     ports:
       - 4173:4173
