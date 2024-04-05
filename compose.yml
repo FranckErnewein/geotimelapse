@@ -1,15 +1,23 @@
 services:
   api:
-    build: ./backend/
+    build: ./api/
     environment:
       - PORT=5000
     ports:
       - 5000:5000
 
   webapp:
-    build: ./frontend/
+    build: ./webapp/
     environment:
-      - API_URL=http://api:5000
-      - PORT=3000
+      - VITE_API_URL=/api
     ports:
       - 3000:3000
+      - 80:80
+      - 443:443
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:

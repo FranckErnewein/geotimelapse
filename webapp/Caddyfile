@@ -1,0 +1,18 @@
+(routing) {
+  root * /app
+  file_server
+
+  route /api* {
+    reverse_proxy api:5000
+  }
+}
+
+localhost {
+  import routing
+}
+
+geotimelapse.com {
+  tls franck.ernewein@gmail.com
+
+  import routing
+}

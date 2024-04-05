@@ -1,13 +1,9 @@
 import { useQuery } from 'react-query'
 import { Link } from 'react-router-dom'
-import { Config } from '../types'
-
-const configsUrl = `/api/configs`
+import { getConfigs } from '../services'
 
 export default function Home() {
-  const { data = [] } = useQuery<Config[]>([], () =>
-    fetch(configsUrl).then((r) => r.json())
-  )
+  const { data = [] } = useQuery('zobconfigs', getConfigs)
 
   return (
     <ul>
