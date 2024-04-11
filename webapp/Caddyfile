@@ -1,8 +1,19 @@
-:80 
-
+(routing) {
   root * /app
   file_server
 
   route /api* {
     reverse_proxy api:5000
   }
+}
+
+http://localhost,
+http://local.geotimelapse.com,
+http://dev.geotimelapse.com {
+  import routing
+}
+
+www.geotimelapse.com {
+  tls franck.ernewein@gmail.com
+  import routing
+}
