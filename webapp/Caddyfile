@@ -13,6 +13,7 @@ http://dev.geotimelapse.com {
   import routing
 }
 
+geotimelapse.com,
 www.geotimelapse.com {
   tls franck.ernewein@gmail.com
   import routing
