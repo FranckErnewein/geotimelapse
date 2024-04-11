@@ -13,6 +13,11 @@ http://dev.geotimelapse.com {
   import routing
 }
 
+https://localhost {
+  tls internal
+  import routing
+}
+
 geotimelapse.com,
 www.geotimelapse.com {
   tls franck.ernewein@gmail.com

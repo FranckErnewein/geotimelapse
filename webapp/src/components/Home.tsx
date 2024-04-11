@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { getConfigs } from '../services'
 
 export default function Home() {
-  const { data = [] } = useQuery('zobconfigs', getConfigs)
+  const { data = [] } = useQuery('configs', getConfigs)
 
   return (
     <ul>
