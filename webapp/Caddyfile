@@ -13,7 +13,9 @@ http://dev.geotimelapse.com {
   import routing
 }
 
-https://localhost {
+https://localhost,
+https://local.geotimelapse.com,
+https://dev.geotimelapse.com {
   tls internal
   import routing
 }
