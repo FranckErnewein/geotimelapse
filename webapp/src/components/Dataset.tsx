@@ -1,13 +1,14 @@
 import { useWindowSize } from '@uidotdev/usehooks'
 import { useParams } from 'react-router-dom'
+import { useQuery } from 'react-query'
 
-import useConfig from '../hooks/useConfig'
+import { getConfig } from '../services'
 import GeoTimelapse from './GeoTimelapse'
 
 export default function Dataset() {
-  const { id } = useParams()
+  const { id = 'undefined' } = useParams()
   const { width, height } = useWindowSize()
-  const { config } = useConfig(id)
+  const { data: config } = useQuery(['config', id], () => getConfig(id))
 
   if (!config || !width || !height) return null
   return <GeoTimelapse {...{ ...config, width, height }} />
