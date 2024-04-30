@@ -162,6 +162,7 @@ const Activity: FC<
       })}
       <ActivityFocusArea
         {...{
+          setPlay,
           firstDate,
           lastDate,
           dayWidth,

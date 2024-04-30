@@ -20,6 +20,7 @@ function filterBoundedData(data: Item[], bounds: number[]): Item[] {
 }
 
 function getWidgetData(data: Item[], bounds: number[]): WorkerAnwser {
+  if (data.length === 0) console.warn('no item found in CSV file')
   return { activity: getActivity(filterBoundedData(data, bounds)) }
 }
 
@@ -38,11 +39,10 @@ self.onmessage = async (e: MessageEvent<Config | string>) => {
       loading: undefined,
       activity: undefined,
     })
-    const baseURL = import.meta.env.VITE_API_URL ?? '/api'
-    const csvUrl = `${baseURL}/csv/${config.id}`
-    parse<CSVLine>(csvUrl, {
+    parse<CSVLine>(config.csv, {
       download: true,
       dynamicTyping: true,
+      chunkSize: 5242880 * 2,
       header: true,
       step: (r, p) => {
         parser = p
@@ -98,7 +98,7 @@ self.onmessage = async (e: MessageEvent<Config | string>) => {
     typeof e.data[1] === 'number' &&
     typeof e.data[2] === 'number' &&
     typeof e.data[3] === 'number' &&
-    JSON.stringify(e.data) !== JSON.stringify(bounds)
+    e.data.join(',') !== bounds.join(',')
   ) {
     bounds = e.data
     if (!parser) {

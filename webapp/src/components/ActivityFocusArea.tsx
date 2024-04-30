@@ -78,11 +78,13 @@ interface Props {
   dayWidth: number
   setToDate: (date: string) => void
   setFromDate: (date: string) => void
+  setPlay: (isPlaying: boolean) => void
 }
 
 const ActivityFocusArea: FC<Props> = ({
   setFromDate,
   setToDate,
+  setPlay,
   firstDate,
   from,
   to,
@@ -96,6 +98,7 @@ const ActivityFocusArea: FC<Props> = ({
   return (
     <Container>
       <DraggableCore
+        onStart={() => setPlay(false)}
         onDrag={(_, { x }) => {
           const halfDaysDelta = Math.round(daysDelta / 2)
           const date = addDays(firstDate, Math.floor(x / dayWidth))

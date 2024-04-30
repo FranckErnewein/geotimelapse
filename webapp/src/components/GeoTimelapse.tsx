@@ -6,14 +6,17 @@ import { format, addDays } from 'date-fns'
 import DeckGL from '@deck.gl/react'
 import { WebMercatorViewport } from '@deck.gl/core'
 import { ScatterplotLayer } from '@deck.gl/layers'
+// import { IconLayer } from '@deck.gl/layers'
+import GlowingLayer from '../layers/GlowingLayer'
 
 import { Item, Config } from '../types'
+import { defaultDayDuration } from '../constants'
 import useCSV from '../hooks/useCSV'
 import formatNumber from '../utils/formatNumber'
 import generateMapStyle from '../utils/generateMapStyle'
+// import { generateSprites, generateSpritesMapping } from '../layers/sprites'
 import Activity from './Activity'
 import Counter from './Counter'
-import Details from './Details'
 
 const mapStyle = generateMapStyle()
 
@@ -54,7 +57,7 @@ const GeoTimelapse: FC<GeoTimelapseProps> = ({ width, height, ...config }) => {
     [east, north],
     [west, south],
   ])
-  const [details, setDetails] = useState<Item>()
+  // const [details, setDetails] = useState<Item>()
   const [bounds, setBounds] = useState([east, north, west, south])
   const { data } = useCSV(config, bounds)
   const [fromDate, setFromDate] = useState<string | undefined>()
@@ -66,7 +69,7 @@ const GeoTimelapse: FC<GeoTimelapseProps> = ({ width, height, ...config }) => {
     if (items[0]) {
       const firstDate = items[0].date
       setFromDate(firstDate)
-      setToDate(format(addDays(firstDate, 30), 'yyyy-MM-dd'))
+      setToDate(format(addDays(firstDate, defaultDayDuration), 'yyyy-MM-dd'))
     }
   }, [items])
 
@@ -99,33 +102,24 @@ const GeoTimelapse: FC<GeoTimelapseProps> = ({ width, height, ...config }) => {
     { count: 0, value: 0 }
   )
 
-  let radiusMinPixels = 0.3
-  if (counterProps.count < 10000) radiusMinPixels = 0.4
-  if (counterProps.count < 7000) radiusMinPixels = 0.5
-  if (counterProps.count < 5000) radiusMinPixels = 0.7
-  if (counterProps.count < 1000) radiusMinPixels = 1
-  if (counterProps.count < 500) radiusMinPixels = 1.5
-
   const layers = [
+    new GlowingLayer<Item>({
+      id: 'glowing-layer',
+      data: truncatedData,
+      pickable: true,
+      radiusUnits: 'pixels',
+      getRadius: 10,
+      getPosition: (d) => [d.longitude, d.latitude],
+      getFillColor: [200, 255, 255],
+    }),
     new ScatterplotLayer<Item>({
       id: 'scatterplot-layer',
-      onHover: ({ object }) => setDetails(object),
       data: truncatedData,
-      radiusUnits: 'meters',
       pickable: true,
-      filled: true,
-      stroked: false,
-      radiusScale: 6,
-      lineWidthMinPixels: 0.5,
-      radiusMinPixels,
-      radiusMaxPixels: 10,
+      radiusUnits: 'pixels',
+      getRadius: 0.5,
       getPosition: (d) => [d.longitude, d.latitude],
-      getRadius: (d, x) => {
-        return (d.value / 1000000) * 10 * (x.index / truncatedData.length)
-      },
-      getFillColor: (_, x) => {
-        return [200, 200, 255, 200 * (x.index / truncatedData.length) + 10]
-      },
+      getFillColor: [255, 255, 255],
     }),
   ]
 
@@ -159,7 +153,6 @@ const GeoTimelapse: FC<GeoTimelapseProps> = ({ width, height, ...config }) => {
           mapStyle={mapStyle}
         />
       </DeckGL>
-      {details && <Details item={details} />}
       {data.activity && fromDate && toDate && (
         <Activity
           setToDate={setToDate}
