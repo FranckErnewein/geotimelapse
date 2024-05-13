@@ -26,7 +26,7 @@ def config(id):
             return jsonify(config)
     abort(404)
 
-@app.route("/api/configs/", methods=['GET'])
+@app.route("/api/configs", methods=['GET'])
 def configs():
     return jsonify(all_config)
 

@@ -13,6 +13,6 @@ export const api = axios.create({
   },
 })
 
-export const getConfigs = () => api.get<Config[]>('configs/').then(get('data'))
+export const getConfigs = () => api.get<Config[]>('configs').then(get('data'))
 export const getConfig = (id: string) =>
-  api.get<Config>(`config/${id}/`).then(get('data'))
+  api.get<Config>(`config/${id}`).then(get('data'))
