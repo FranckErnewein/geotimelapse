@@ -2,7 +2,8 @@ import axios from 'axios'
 
 import { Config } from './types'
 
-const baseURL = import.meta.env.VITE_API_URL ?? '/api'
+const baseURL =
+  import.meta.env.VITE_API_URL ?? `${document.location.origin}/api`
 
 export const api = axios.create({
   baseURL,
