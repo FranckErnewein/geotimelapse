@@ -1,10 +1,16 @@
 (routing) {
+
   root * /app
   file_server
+
+  route /dataset* {
+    try_files {path} /index.html
+  }
 
   route /api* {
     reverse_proxy api:5000
   }
+
 }
 
 https://localhost,
