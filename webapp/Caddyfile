@@ -7,12 +7,6 @@
   }
 }
 
-http://localhost,
-http://local.geotimelapse.com,
-http://dev.geotimelapse.com {
-  import routing
-}
-
 https://localhost,
 https://local.geotimelapse.com,
 https://dev.geotimelapse.com {
