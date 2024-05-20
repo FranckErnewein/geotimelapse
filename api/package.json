@@ -1,0 +1,21 @@
+{
+  "name": "geotimelapse-api",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "ts-node src/index.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Franck Ernewein",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@types/pg": "^8.11.6",
+    "express": "^4.19.2",
+    "pg": "^8.11.5",
+    "ts-node": "^10.9.2"
+  },
+  "devDependencies": {
+    "@tsconfig/node20": "^20.1.4"
+  }
+}

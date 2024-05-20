@@ -1,12 +1,15 @@
-FROM python:3.8-slim-buster
+FROM node:20-buster-slim
 
 WORKDIR /app
 
-COPY requirements.txt requirements.txt
-RUN pip3 install -r requirements.txt
+COPY package.json package.json
+COPY package-lock.json package-lock.json
+COPY tsconfig.json tsconfig.json
 
-COPY . .
+RUN npm install
 
-EXPOSE 5000
+COPY src src
 
-CMD [ "python3", "app.py"]
+EXPOSE 3001
+
+CMD ["npm", "start"]

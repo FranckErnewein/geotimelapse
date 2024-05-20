@@ -2,16 +2,31 @@ services:
   api:
     build: ./api/
     environment:
-      - PORT=5000
+      PGHOST: postgres
+      PGUSER: postgres
+      PGPASSWORD: password123
     ports:
-      - 5000:5000
+      - 3001:3001
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:16
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: password123
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
 
   webapp:
     build: ./webapp/
     environment:
       - VITE_API_URL=/api
     ports:
-      - 3000:3000
       - 80:80
       - 443:443
     volumes:
