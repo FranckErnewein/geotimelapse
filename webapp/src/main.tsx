@@ -13,12 +13,14 @@ import { QueryClient, QueryClientProvider } from 'react-query'
 import App from './App'
 import Home from './components/Home'
 import Dataset from './components/Dataset'
+import Uploader from './components/Uploader'
 
 const router = createBrowserRouter(
   createRoutesFromElements(
     <Route element={<App />}>
       <Route path="/" element={<Home />} />
-      <Route path="/dataset/:id" element={<Dataset />} />
+      <Route path="/new-dataset" element={<Uploader />} />
+      <Route path="/datasets/:id" element={<Dataset />} />
     </Route>
   )
 )

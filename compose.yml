@@ -5,6 +5,8 @@ services:
       PGHOST: postgres
       PGUSER: postgres
       PGPASSWORD: password123
+      PGDATABASE: geotimelapse
+      PORT: 3001
     ports:
       - 3001:3001
     depends_on:
@@ -15,6 +17,7 @@ services:
     restart: always
     environment:
       POSTGRES_PASSWORD: password123
+      POSTGRES_DB: geotimelapse
 
   adminer:
     image: adminer
