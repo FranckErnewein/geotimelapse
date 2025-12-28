@@ -1,6 +1,7 @@
 import { Layer, project32, picking, UNIT } from '@deck.gl/core'
 import { Geometry } from '@luma.gl/engine'
 import { Model } from '@luma.gl/engine'
+import type { ShaderModule } from '@luma.gl/shadertools'
 
 import vs from './GlowingLayer-vertex.glsl'
 import fs from './GlowingLayer-fragment.glsl'
@@ -16,6 +17,39 @@ import type {
   Color,
   DefaultProps,
 } from '@deck.gl/core'
+
+type GlowingProps = {
+  stroked: number
+  filled: number
+  billboard: number
+  antialiasing: number
+  radiusUnits: number
+  radiusScale: number
+  radiusMinPixels: number
+  radiusMaxPixels: number
+  lineWidthUnits: number
+  lineWidthScale: number
+  lineWidthMinPixels: number
+  lineWidthMaxPixels: number
+}
+
+const glowingUniforms: ShaderModule<GlowingProps> = {
+  name: 'glowing',
+  uniformTypes: {
+    stroked: 'f32',
+    filled: 'f32',
+    billboard: 'f32',
+    antialiasing: 'f32',
+    radiusUnits: 'f32',
+    radiusScale: 'f32',
+    radiusMinPixels: 'f32',
+    radiusMaxPixels: 'f32',
+    lineWidthUnits: 'f32',
+    lineWidthScale: 'f32',
+    lineWidthMinPixels: 'f32',
+    lineWidthMaxPixels: 'f32',
+  },
+}
 
 const DEFAULT_COLOR: [number, number, number, number] = [0, 0, 0, 255]
 
@@ -175,7 +209,7 @@ export default class GlowingLayer<
   }
 
   getShaders() {
-    return super.getShaders({ vs, fs, modules: [project32, picking] })
+    return super.getShaders({ vs, fs, modules: [project32, picking, glowingUniforms] })
   }
 
   initializeState() {
@@ -226,8 +260,7 @@ export default class GlowingLayer<
     }
   }
 
-  // @ts-expect-error any
-  draw({ uniforms }) {
+  draw() {
     const {
       radiusUnits,
       radiusScale,
@@ -244,20 +277,21 @@ export default class GlowingLayer<
     } = this.props
     const model = this.state.model!
 
-    model.setUniforms(uniforms)
-    model.setUniforms({
-      stroked: stroked ? 1 : 0,
-      filled,
-      billboard,
-      antialiasing,
-      radiusUnits: UNIT[radiusUnits],
-      radiusScale,
-      radiusMinPixels,
-      radiusMaxPixels,
-      lineWidthUnits: UNIT[lineWidthUnits],
-      lineWidthScale,
-      lineWidthMinPixels,
-      lineWidthMaxPixels,
+    model.shaderInputs.setProps({
+      glowing: {
+        stroked: stroked ? 1 : 0,
+        filled: filled ? 1 : 0,
+        billboard: billboard ? 1 : 0,
+        antialiasing: antialiasing ? 1 : 0,
+        radiusUnits: UNIT[radiusUnits],
+        radiusScale,
+        radiusMinPixels,
+        radiusMaxPixels,
+        lineWidthUnits: UNIT[lineWidthUnits],
+        lineWidthScale,
+        lineWidthMinPixels,
+        lineWidthMaxPixels,
+      },
     })
     model.draw(this.context.renderPass)
   }

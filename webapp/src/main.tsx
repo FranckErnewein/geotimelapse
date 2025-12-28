@@ -8,7 +8,7 @@ import {
 
 import './index.css'
 import 'mapbox-gl/dist/mapbox-gl.css'
-import { QueryClient, QueryClientProvider } from 'react-query'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 import App from './App'
 import Home from './components/Home'

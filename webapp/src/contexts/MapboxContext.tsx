@@ -56,12 +56,14 @@ export const MapboxProvider: FC<{ children: ReactNode }> = ({ children }) => {
       setZoom(map.getZoom())
       const bounds = map.getBounds()
 
-      setBoundingBox({
-        north: bounds.getNorth(),
-        east: bounds.getEast(),
-        west: bounds.getWest(),
-        south: bounds.getSouth(),
-      })
+      if (bounds) {
+        setBoundingBox({
+          north: bounds.getNorth(),
+          east: bounds.getEast(),
+          west: bounds.getWest(),
+          south: bounds.getSouth(),
+        })
+      }
     })
   }
 

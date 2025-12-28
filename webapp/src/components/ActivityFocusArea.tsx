@@ -1,4 +1,4 @@
-import { FC, useState } from 'react'
+import { FC, useState, useRef } from 'react'
 import { DraggableCore } from 'react-draggable'
 import { format, differenceInDays, addDays } from 'date-fns'
 import styled from 'styled-components'
@@ -91,6 +91,10 @@ const ActivityFocusArea: FC<Props> = ({
   dayWidth,
 }) => {
   const [displayDelta, setDisplayDelta] = useState<boolean>(false)
+  const dateAreaRef = useRef<HTMLDivElement>(null)
+  const toLimitRef = useRef<HTMLDivElement>(null)
+  const fromLimitRef = useRef<HTMLDivElement>(null)
+
   const toLeft = differenceInDays(to, firstDate) * dayWidth
   const fromLeft = differenceInDays(from, firstDate) * dayWidth
   const daysDelta = differenceInDays(to, from)
@@ -98,6 +102,7 @@ const ActivityFocusArea: FC<Props> = ({
   return (
     <Container>
       <DraggableCore
+        nodeRef={dateAreaRef}
         onStart={() => setPlay(false)}
         onDrag={(_, { x }) => {
           const halfDaysDelta = Math.round(daysDelta / 2)
@@ -106,11 +111,12 @@ const ActivityFocusArea: FC<Props> = ({
           setToDate(format(addDays(date, halfDaysDelta), 'yyyy-MM-dd'))
         }}
       >
-        <DateArea style={{ left: fromLeft, width: daysDeltaWidth }}>
+        <DateArea ref={dateAreaRef} style={{ left: fromLeft, width: daysDeltaWidth }}>
           {displayDelta && <div className="delta">{daysDelta} days</div>}
         </DateArea>
       </DraggableCore>
       <DraggableCore
+        nodeRef={toLimitRef}
         onStart={() => setDisplayDelta(true)}
         onStop={() => setDisplayDelta(false)}
         onDrag={(_, { x }) => {
@@ -119,7 +125,7 @@ const ActivityFocusArea: FC<Props> = ({
           )
         }}
       >
-        <DateAreaLimit style={{ left: toLeft }}>
+        <DateAreaLimit ref={toLimitRef} style={{ left: toLeft }}>
           <DateLabel
             className={daysDeltaWidth > labelWidth ? 'center' : 'right'}
           >
@@ -128,6 +134,7 @@ const ActivityFocusArea: FC<Props> = ({
         </DateAreaLimit>
       </DraggableCore>
       <DraggableCore
+        nodeRef={fromLimitRef}
         onStart={() => setDisplayDelta(true)}
         onStop={() => setDisplayDelta(false)}
         onDrag={(_, { x }) => {
@@ -136,7 +143,7 @@ const ActivityFocusArea: FC<Props> = ({
           )
         }}
       >
-        <DateAreaLimit className="from" style={{ left: fromLeft }}>
+        <DateAreaLimit ref={fromLimitRef} className="from" style={{ left: fromLeft }}>
           <DateLabel
             className={daysDeltaWidth > labelWidth ? 'center' : 'left'}
           >

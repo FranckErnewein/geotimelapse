@@ -1,9 +1,12 @@
-import { useQuery } from 'react-query'
+import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { getConfigs } from '../services'
 
 export default function Home() {
-  const { data = [] } = useQuery('configs', getConfigs)
+  const { data = [] } = useQuery({
+    queryKey: ['configs'],
+    queryFn: getConfigs,
+  })
 
   return (
     <ul>
