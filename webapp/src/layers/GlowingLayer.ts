@@ -35,6 +35,22 @@ type GlowingProps = {
 
 const glowingUniforms: ShaderModule<GlowingProps> = {
   name: 'glowing',
+  vs: `
+uniform glowingUniforms {
+  float stroked;
+  float filled;
+  float billboard;
+  float antialiasing;
+  float radiusUnits;
+  float radiusScale;
+  float radiusMinPixels;
+  float radiusMaxPixels;
+  float lineWidthUnits;
+  float lineWidthScale;
+  float lineWidthMinPixels;
+  float lineWidthMaxPixels;
+} glowing;
+`,
   uniformTypes: {
     stroked: 'f32',
     filled: 'f32',
@@ -48,6 +64,20 @@ const glowingUniforms: ShaderModule<GlowingProps> = {
     lineWidthScale: 'f32',
     lineWidthMinPixels: 'f32',
     lineWidthMaxPixels: 'f32',
+  },
+  defaultUniforms: {
+    stroked: 0,
+    filled: 1,
+    billboard: 0,
+    antialiasing: 1,
+    radiusUnits: 0,
+    radiusScale: 1,
+    radiusMinPixels: 0,
+    radiusMaxPixels: Number.MAX_SAFE_INTEGER,
+    lineWidthUnits: 0,
+    lineWidthScale: 1,
+    lineWidthMinPixels: 0,
+    lineWidthMaxPixels: Number.MAX_SAFE_INTEGER,
   },
 }
 

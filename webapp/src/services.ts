@@ -6,6 +6,8 @@ import { Config } from './types'
 const baseURL =
   import.meta.env.VITE_API_URL ?? `${document.location.origin}/api`
 
+console.log(baseURL)
+
 export const api = axios.create({
   baseURL,
   headers: {
