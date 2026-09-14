@@ -1,0 +1,55 @@
+{
+  "name": "geotimelapse",
+  "version": "0.1.0",
+  "description": "Replay a day of geolocated events on a dark glowing map",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./duckdb": {
+      "types": "./dist/duckdb-source.d.ts",
+      "import": "./dist/duckdb-source.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test src/utils.test.ts"
+  },
+  "peerDependencies": {
+    "@duckdb/duckdb-wasm": ">=1.29.0",
+    "deck.gl": ">=9.4.0",
+    "mapbox-gl": ">=3.0.0",
+    "react": ">=19.0.0",
+    "react-dom": ">=19.0.0",
+    "react-map-gl": ">=8.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@duckdb/duckdb-wasm": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "@heroicons/react": "^2.2.0",
+    "date-fns": "^4.1.0"
+  },
+  "devDependencies": {
+    "@duckdb/duckdb-wasm": "1.33.1-dev57.0",
+    "@types/node": "^26.0.0",
+    "@types/react": "^19.0.0",
+    "deck.gl": "^9.4.0",
+    "mapbox-gl": "^3.30.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-map-gl": "^8.1.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.9.0"
+  }
+}
