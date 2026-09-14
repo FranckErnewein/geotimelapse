@@ -3,7 +3,15 @@
   "version": "0.1.0",
   "description": "Replay a day of geolocated events on a dark glowing map",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/FranckErnewein/geotimelapse.git",
+    "directory": "packages/geotimelapse"
+  },
   "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
