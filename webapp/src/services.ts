@@ -1,20 +1,10 @@
-import axios from 'axios'
-import { get } from 'lodash/fp'
-
 import { Config } from './types'
+import configs from './configs.json'
 
-const baseURL =
-  import.meta.env.VITE_API_URL ?? `${document.location.origin}/api`
+export const getConfigs = async (): Promise<Config[]> => configs as Config[]
 
-console.log(baseURL)
-
-export const api = axios.create({
-  baseURL,
-  headers: {
-    'Content-type': 'application/json',
-  },
-})
-
-export const getConfigs = () => api.get<Config[]>('configs').then(get('data'))
-export const getConfig = (id: string) =>
-  api.get<Config>(`config/${id}`).then(get('data'))
+export const getConfig = async (id: string): Promise<Config> => {
+  const config = (configs as Config[]).find((c) => c.id === id)
+  if (!config) throw new Error(`Config not found: ${id}`)
+  return config
+}

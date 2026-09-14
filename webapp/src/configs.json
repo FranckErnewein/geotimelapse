@@ -1,0 +1,80 @@
+[
+  {
+    "id": "immo-fr-sample",
+    "csv": "/immo-fr-sample.csv",
+    "fields": {
+      "id": "id_mutation",
+      "date": "date_mutation",
+      "latitude": "latitude",
+      "longitude": "longitude",
+      "value": "valeur_fonciere"
+    },
+    "bounds": {
+      "north": 51,
+      "south": 40,
+      "east": -5,
+      "west": 8
+    },
+    "date_start": "2023-01-01",
+    "default_range": {
+      "days": 7
+    },
+    "time_unit": {
+      "days": 1
+    },
+    "filters": {
+      "nature_mutation": "Vente"
+    }
+  },
+  {
+    "id": "d320d734-9e67-415b-b12d-daa0dc696b90",
+    "csv": "/s3/immo-fr-2023-2.csv",
+    "fields": {
+      "id": "id_mutation",
+      "date": "date_mutation",
+      "latitude": "latitude",
+      "longitude": "longitude",
+      "value": "valeur_fonciere"
+    },
+    "bounds": {
+      "north": 51,
+      "south": 40,
+      "east": -5,
+      "west": 8
+    },
+    "date_start": "2023-01-01",
+    "default_range": {
+      "days": 7
+    },
+    "time_unit": {
+      "days": 1
+    },
+    "filters": {
+      "nature_mutation": "Vente"
+    }
+  },
+  {
+    "id": "d09dde3d-ab78-44f2-be0a-004819ff6489",
+    "csv": "/s3/Eartquakes-1990-2023.csv",
+    "fields": {
+      "id": "time",
+      "date": "date",
+      "latitude": "latitude",
+      "longitude": "longitude",
+      "value": "magnitudo"
+    },
+    "date_start": "2023-01-01",
+    "default_range": {
+      "days": 7
+    },
+    "time_unit": {
+      "days": 1
+    },
+    "bounds": {
+      "north": 80,
+      "south": -80,
+      "east": -180,
+      "west": 180
+    }
+  }
+]

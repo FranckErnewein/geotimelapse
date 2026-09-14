@@ -21,6 +21,13 @@ export interface Config {
   filters?: {
     [key: string]: string
   }
+  date_start: string
+  default_range: {
+    days?: number
+  }
+  time_unit: {
+    days?: number
+  }
 }
 
 export interface Item {
@@ -29,16 +36,6 @@ export interface Item {
   longitude: number
   latitude: number
   value: number
-}
-
-export interface CSVLine {
-  [key: string]: number | string
-}
-
-export type WorkerParams = string | number[]
-
-export interface MapProps {
-  items: Item[]
 }
 
 export interface ActivityDateItem {
@@ -53,8 +50,4 @@ export interface ActivityProps {
   activity: ActivityDateItem[]
 }
 
-export interface WorkerAnwser {
-  map?: MapProps
-  activity?: ActivityProps
-  loading?: number
-}
+export type Coordinates = [longitude: number, latitude: number]

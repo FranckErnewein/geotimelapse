@@ -1,13 +1,18 @@
 # Geotimelapse
 
+Frontend-only app: CSVs are loaded and queried in the browser with
+[DuckDB-WASM](https://duckdb.org/docs/api/wasm/overview), no backend.
+
 ## Dev
 
 ```
-    docker-compose build && docker-compose up
+cd webapp
+npm install
+npm run dev
 ```
 
-## Deploy
-
-```
-    git fetch && git rebase && docker-compose build && docker-compose up -d
-```
+Datasets are declared in `webapp/src/configs.json`. CSVs hosted on the
+`geotimelapse` S3 bucket are fetched through the Vite dev proxy (`/s3/...`,
+see `vite.config.ts`) because the bucket does not send CORS headers. For a
+production deployment, either enable CORS on the bucket or configure an
+equivalent rewrite on the host.

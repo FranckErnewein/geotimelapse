@@ -14,5 +14,5 @@ export default function Dataset() {
   })
 
   if (!config || !width || !height) return null
-  return <GeoTimelapse {...{ ...config, width, height }} />
+  return <GeoTimelapse config={config} width={width} height={height} />
 }

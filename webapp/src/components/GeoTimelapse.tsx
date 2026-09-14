@@ -1,48 +1,26 @@
-import { FC, useState, useEffect } from 'react'
-import { debounce } from 'lodash'
+import { FC } from 'react'
 import Map from 'react-map-gl'
-import styled from 'styled-components'
-import { format, addDays } from 'date-fns'
 import DeckGL from '@deck.gl/react'
 import { WebMercatorViewport } from '@deck.gl/core'
 import { ScatterplotLayer } from '@deck.gl/layers'
-// import { IconLayer } from '@deck.gl/layers'
 import GlowingLayer from '../layers/GlowingLayer'
 
-import { Item, Config } from '../types'
-import { defaultDayDuration } from '../constants'
-import useCSV from '../hooks/useCSV'
-import formatNumber from '../utils/formatNumber'
+import { Config, Coordinates } from '../types'
 import generateMapStyle from '../utils/generateMapStyle'
-// import { generateSprites, generateSpritesMapping } from '../layers/sprites'
-import Activity from './Activity'
-import Counter from './Counter'
+import useDataset from '../hooks/useDataset'
 
 const mapStyle = generateMapStyle()
 
 const MAPBOX_TOKEN =
   'pk.eyJ1IjoiZnJhbmNrZXJuZXdlaW4iLCJhIjoiYXJLM0dISSJ9.mod0ppb2kjzuMy8j1pl0Bw'
 
-const Container = styled.div`
-  font-family: monospace;
-  background: black;
-  position: relative;
-`
-
-const Loader = styled.div`
-  position: absolute;
-  opacity: 0.5;
-  color: white;
-  top: 50%;
-  left: 50%;
-`
-
-export type GeoTimelapseProps = Config & {
+export type GeoTimelapseProps = {
+  config: Config
   width: number
   height: number
 }
 
-const GeoTimelapse: FC<GeoTimelapseProps> = ({ width, height, ...config }) => {
+const GeoTimelapse: FC<GeoTimelapseProps> = ({ config, width, height }) => {
   const {
     bounds: { east, north, west, south },
   } = config
@@ -57,82 +35,32 @@ const GeoTimelapse: FC<GeoTimelapseProps> = ({ width, height, ...config }) => {
     [east, north],
     [west, south],
   ])
-  // const [details, setDetails] = useState<Item>()
-  const [bounds, setBounds] = useState([east, north, west, south])
-  const { data } = useCSV(config, bounds)
-  const [fromDate, setFromDate] = useState<string | undefined>()
-  const [toDate, setToDate] = useState<string | undefined>()
 
-  const items = data.map?.items || []
-
-  useEffect(() => {
-    if (items[0]) {
-      const firstDate = items[0].date
-      setFromDate(firstDate)
-      setToDate(format(addDays(firstDate, defaultDayDuration), 'yyyy-MM-dd'))
-    }
-  }, [items])
-
-  const fromIndex = fromDate
-    ? items.findIndex((item) => item.date >= fromDate)
-    : 0
-  const toIndex = toDate
-    ? items.findIndex((item) => item.date >= toDate)
-    : items.length || 0
-  const truncatedData = items.slice(fromIndex, toIndex) || []
-
-  const fromActivityIndex =
-    fromDate && data.activity
-      ? data.activity.activity.findIndex((item) => item.date >= fromDate)
-      : 0
-  const toActivityIndex =
-    toDate && data.activity
-      ? data.activity?.activity.findIndex((item) => item.date >= toDate)
-      : 0
-  const truncatedActivity = data.activity
-    ? data.activity.activity.slice(fromActivityIndex, toActivityIndex)
-    : []
-  const counterProps = truncatedActivity.reduce(
-    (memo, act) => {
-      return {
-        count: memo.count + act.count,
-        value: memo.value + act.value,
-      }
-    },
-    { count: 0, value: 0 }
-  )
+  const { items, loading, error } = useDataset(config)
 
   const layers = [
-    new GlowingLayer<Item>({
+    new GlowingLayer<Coordinates>({
       id: 'glowing-layer',
-      data: truncatedData,
+      data: items,
       pickable: true,
       radiusUnits: 'pixels',
       getRadius: 10,
-      getPosition: (d) => [d.longitude, d.latitude],
+      getPosition: (d) => d,
       getFillColor: [200, 255, 255],
     }),
-    new ScatterplotLayer<Item>({
+    new ScatterplotLayer<Coordinates>({
       id: 'scatterplot-layer',
-      data: truncatedData,
+      data: items,
       pickable: true,
       radiusUnits: 'pixels',
       getRadius: 0.5,
-      getPosition: (d) => [d.longitude, d.latitude],
+      getPosition: (d) => d,
       getFillColor: [255, 255, 255],
     }),
   ]
 
-  const onViewStateChange = debounce(
-    ({ viewState }: { viewState: Record<string, unknown> }) => {
-      const viewport = new WebMercatorViewport(viewState)
-      setBounds(viewport.getBounds())
-    },
-    250
-  )
-
   return (
-    <Container style={{ width, height }}>
+    <div className="monospace bg-black relative" style={{ width, height }}>
       <DeckGL
         width={width}
         height={height}
@@ -143,7 +71,6 @@ const GeoTimelapse: FC<GeoTimelapseProps> = ({ width, height, ...config }) => {
           pitch: 0,
           bearing: 0,
         }}
-        onViewStateChange={onViewStateChange}
         controller={true}
         layers={layers}
       >
@@ -153,21 +80,17 @@ const GeoTimelapse: FC<GeoTimelapseProps> = ({ width, height, ...config }) => {
           mapStyle={mapStyle}
         />
       </DeckGL>
-      {data.activity && fromDate && toDate && (
-        <Activity
-          setToDate={setToDate}
-          setFromDate={setFromDate}
-          width={width}
-          from={fromDate}
-          to={toDate}
-          {...data.activity}
-        />
+      {loading && (
+        <div style={{ position: 'absolute', top: 10, left: 10, color: '#fff' }}>
+          loading…
+        </div>
       )}
-      {data.activity?.activity && <Counter {...counterProps} />}
-      {data.loading && (
-        <Loader>{formatNumber(data.loading)} lines loaded</Loader>
+      {error && (
+        <div style={{ position: 'absolute', top: 10, left: 10, color: '#f66' }}>
+          {error.message}
+        </div>
       )}
-    </Container>
+    </div>
   )
 }
 
