@@ -7,24 +7,29 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
     },
     "./duckdb": {
       "types": "./dist/duckdb-source.d.ts",
-      "import": "./dist/duckdb-source.js"
-    }
+      "import": "./dist/duckdb-source.js",
+      "default": "./dist/duckdb-source.js"
+    },
+    "./package.json": "./package.json"
   },
   "files": [
     "dist",
-    "src"
+    "src",
+    "LICENSE"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
+    "prepublishOnly": "pnpm build",
     "typecheck": "tsc --noEmit",
     "test": "tsx --test src/utils.test.ts"
   },
   "peerDependencies": {
-    "@duckdb/duckdb-wasm": ">=1.29.0",
+    "@duckdb/duckdb-wasm": ">=1.28.0-0",
     "deck.gl": ">=9.4.0",
     "mapbox-gl": ">=3.0.0",
     "react": ">=19.0.0",

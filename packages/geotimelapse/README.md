@@ -7,6 +7,8 @@ and a TV mode (autoplay, loop, self-hiding UI and cursor).
 ## Usage
 
 ```tsx
+'use client'; // browser-only (WebGL, workers) — in Next.js, use it from a client component
+
 import 'mapbox-gl/dist/mapbox-gl.css';
 
 import { GeoTimelapse } from 'geotimelapse';
@@ -30,7 +32,9 @@ const source = createDuckDbSource({
 </div>;
 ```
 
-The component fills its parent: give the wrapper an explicit size.
+The component fills its parent: give the wrapper an explicit size. The source
+holds a dedicated worker and the full in-memory table: call `source.dispose()`
+when you are done with it (e.g. leaving the page in an SPA).
 
 ### Data contract
 

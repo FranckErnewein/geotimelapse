@@ -22,6 +22,9 @@ export function createDuckDbSource({ parquetUrl, bundles, valueColumn = 'value' 
   let dbPromise: Promise<duckdb.AsyncDuckDB> | null = null;
   let connPromise: Promise<duckdb.AsyncDuckDBConnection> | null = null;
   let loadPromise: Promise<void> | null = null;
+  // Mutable slot so a load() call after the first (e.g. a React StrictMode
+  // remount) still gets progress reports from the single in-flight download.
+  let progressListener: ((loadedBytes: number, totalBytes: number) => void) | undefined;
   let scopeFilter = 'TRUE';
   let requestedFilter = 'TRUE';
   let scopeChain: Promise<void> = Promise.resolve();
@@ -47,8 +50,9 @@ export function createDuckDbSource({ parquetUrl, bundles, valueColumn = 'value' 
     WINDOW w AS (ORDER BY day_second)
   `;
 
-  const load = (onProgress?: (loadedBytes: number, totalBytes: number) => void) =>
-    (loadPromise ??= (async () => {
+  const load = (onProgress?: (loadedBytes: number, totalBytes: number) => void) => {
+    if (onProgress) progressListener = onProgress;
+    return (loadPromise ??= (async () => {
       const response = await fetch(parquetUrl);
       if (!response.ok || !response.body) throw new Error(`parquet download failed (${response.status})`);
       const totalBytes = Number(response.headers.get('content-length') ?? 0);
@@ -63,7 +67,7 @@ export function createDuckDbSource({ parquetUrl, bundles, valueColumn = 'value' 
         loadedBytes += value.byteLength;
         if (loadedBytes - lastReported >= 8 * 1024 * 1024) {
           lastReported = loadedBytes;
-          onProgress?.(loadedBytes, totalBytes);
+          progressListener?.(loadedBytes, totalBytes);
         }
       }
       const buffer = new Uint8Array(loadedBytes);
@@ -72,7 +76,7 @@ export function createDuckDbSource({ parquetUrl, bundles, valueColumn = 'value' 
         buffer.set(chunk, offset);
         offset += chunk.byteLength;
       }
-      onProgress?.(loadedBytes, totalBytes);
+      progressListener?.(loadedBytes, totalBytes);
 
       const db = await getDB();
       await db.registerFileBuffer('replay.parquet', buffer);
@@ -96,6 +100,7 @@ export function createDuckDbSource({ parquetUrl, bundles, valueColumn = 'value' 
       await conn.query(CREATE_TOTALS);
       await db.dropFile('replay.parquet');
     })());
+  };
 
   const frame = async (fromSecond: number, toSecond: number): Promise<FramePoints> => {
     const conn = await getConn();
@@ -155,32 +160,47 @@ export function createDuckDbSource({ parquetUrl, bundles, valueColumn = 'value' 
       ? `lat BETWEEN ${bounds.south} AND ${bounds.north} AND lon BETWEEN ${bounds.west} AND ${bounds.east}`
       : 'TRUE';
     requestedFilter = filter;
-    scopeChain = scopeChain.then(async () => {
-      // Superseded while queued, or already active.
-      if (requestedFilter !== filter || filter === scopeFilter) return;
-      const conn = await getConn();
-      await conn.query(`
-        CREATE OR REPLACE TABLE scope_seconds_build AS
-        SELECT day_second, count(*) AS events, sum(value) AS value
-        FROM events WHERE false GROUP BY day_second
-      `);
-      for (let hour = 0; hour < 24; hour++) {
-        if (requestedFilter !== filter) return;
+    scopeChain = scopeChain
+      .then(async () => {
+        // Superseded while queued, or already active.
+        if (requestedFilter !== filter || filter === scopeFilter) return;
+        // The rebuild reads the events table: wait for the day to be loaded.
+        await load();
+        const conn = await getConn();
         await conn.query(`
-          INSERT INTO scope_seconds_build
-          SELECT day_second, count(*), sum(value)
-          FROM events
-          WHERE day_second >= ${hour * 3600} AND day_second < ${(hour + 1) * 3600} AND ${filter}
-          GROUP BY day_second
+          CREATE OR REPLACE TABLE scope_seconds_build AS
+          SELECT day_second, count(*) AS events, sum(value) AS value
+          FROM events WHERE false GROUP BY day_second
         `);
-      }
-      await conn.query(`CREATE OR REPLACE TABLE scope_seconds AS FROM scope_seconds_build`);
-      await conn.query(`DROP TABLE scope_seconds_build`);
-      await conn.query(CREATE_TOTALS);
-      scopeFilter = filter;
-    });
+        for (let hour = 0; hour < 24; hour++) {
+          if (requestedFilter !== filter) return;
+          await conn.query(`
+            INSERT INTO scope_seconds_build
+            SELECT day_second, count(*), sum(value)
+            FROM events
+            WHERE day_second >= ${hour * 3600} AND day_second < ${(hour + 1) * 3600} AND ${filter}
+            GROUP BY day_second
+          `);
+        }
+        await conn.query(`CREATE OR REPLACE TABLE scope_seconds AS FROM scope_seconds_build`);
+        await conn.query(`DROP TABLE scope_seconds_build`);
+        await conn.query(CREATE_TOTALS);
+        scopeFilter = filter;
+      })
+      // A failed rebuild keeps the previous scope; never poison the chain.
+      .catch((error: unknown) => console.error('geotimelapse scope rebuild failed', error));
     return scopeChain;
   };
 
-  return { load, frame, totals, activity, setScope };
+  const dispose = async () => {
+    const conn = connPromise ? await connPromise.catch(() => null) : null;
+    connPromise = null;
+    await conn?.close().catch(() => {});
+    const db = dbPromise ? await dbPromise.catch(() => null) : null;
+    dbPromise = null;
+    loadPromise = null;
+    await db?.terminate().catch(() => {});
+  };
+
+  return { load, frame, totals, activity, setScope, dispose };
 }

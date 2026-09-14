@@ -28,6 +28,7 @@ function Stage({
   const [scoped, setScoped] = useState(true);
   const [progress, setProgress] = useState<{ loadedBytes: number; totalBytes: number } | null>(null);
   const [ready, setReady] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   // Bumped after every completed re-scope so readers re-query the source.
   const [scopeVersion, setScopeVersion] = useState(0);
   // Mouse-idle state: the settings gear and the cursor itself fade out so
@@ -51,10 +52,14 @@ function Stage({
     );
   }, []);
 
-  // Load the day once, then start the replay.
+  // Load the day once, then start the replay. A swapped source re-gates every
+  // reader until its own load resolves.
   useEffect(() => {
     let disposed = false;
-    void source
+    setReady(false);
+    setProgress(null);
+    setLoadError(null);
+    source
       .load((loadedBytes, totalBytes) => {
         if (!disposed) setProgress({ loadedBytes, totalBytes });
       })
@@ -62,6 +67,9 @@ function Stage({
         if (disposed) return;
         setReady(true);
         clock.play();
+      })
+      .catch((error: unknown) => {
+        if (!disposed) setLoadError(error instanceof Error ? error.message : String(error));
       });
     return () => {
       disposed = true;
@@ -89,21 +97,29 @@ function Stage({
     return () => document.removeEventListener('fullscreenchange', onChange);
   }, []);
 
+  // Unscoping goes back to the whole world, once per toggle.
+  useEffect(() => {
+    if (!ready || scoped) return;
+    let disposed = false;
+    void source.setScope(null).then(() => {
+      if (!disposed) setScopeVersion((version) => version + 1);
+    });
+    return () => {
+      disposed = true;
+    };
+  }, [source, scoped, ready]);
+
   // Re-scope the aggregates once the viewport settles.
   useEffect(() => {
-    if (!ready) return;
+    if (!ready || !scoped || !bounds) return;
     let disposed = false;
-    const bump = () => {
-      if (!disposed) setScopeVersion((version) => version + 1);
-    };
-    if (!scoped) {
-      void source.setScope(null).then(bump);
-      return () => {
-        disposed = true;
-      };
-    }
-    if (!bounds) return;
-    const handle = setTimeout(() => void source.setScope(bounds).then(bump), 400);
+    const handle = setTimeout(
+      () =>
+        void source.setScope(bounds).then(() => {
+          if (!disposed) setScopeVersion((version) => version + 1);
+        }),
+      400,
+    );
     return () => {
       disposed = true;
       clearTimeout(handle);
@@ -148,6 +164,7 @@ function Stage({
         <Counter
           source={source}
           ready={ready}
+          error={loadError}
           progress={progress}
           scopeVersion={scopeVersion}
           dateLabel={dateLabel}

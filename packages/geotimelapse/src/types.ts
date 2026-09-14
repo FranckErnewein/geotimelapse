@@ -38,6 +38,12 @@ export interface GeoTimelapseSource {
   activity(): Promise<Float32Array>;
   /** Scopes subsequent totals() and activity() reads to the given viewport. */
   setScope(bounds: MapBounds | null): Promise<void>;
+  /**
+   * Releases everything the source holds (workers, in-memory tables...). The
+   * source is unusable afterwards. The component never calls it: the owner
+   * who created the source disposes it when done.
+   */
+  dispose(): Promise<void>;
 }
 
 export interface GeoTimelapseProps {
