@@ -16,7 +16,9 @@ import { createDuckDbSource } from 'geotimelapse/duckdb';
 
 const source = createDuckDbSource({
   parquetUrl: '/data/replay-2026-09-05.parquet',
-  bundles: myDuckDbBundles, // e.g. self-hosted, or duckdb.getJsDelivrBundles()
+  // engine omitted: version-matched jsDelivr CDN. Self-hosting: pass the base
+  // URL you serve @duckdb/duckdb-wasm/dist under (the copy THIS package
+  // resolves, so the wasm matches the JS), or full DuckDBBundles.
   valueColumn: 'spend_micros',
 });
 
@@ -46,8 +48,9 @@ an in-browser duckdb-wasm table.
 
 ### Peer dependencies
 
-`react`, `react-dom`, `deck.gl`, `mapbox-gl`, `react-map-gl` — plus
-`@duckdb/duckdb-wasm` (optional) if you use `geotimelapse/duckdb`.
+`react`, `react-dom`, `deck.gl`, `mapbox-gl`, `react-map-gl`.
+(`@duckdb/duckdb-wasm` is a regular dependency, pulled in only when you import
+`geotimelapse/duckdb`.)
 
 ### Styling
 

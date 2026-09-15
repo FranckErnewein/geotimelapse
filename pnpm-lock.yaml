@@ -10,6 +10,9 @@ importers:
 
   packages/geotimelapse:
     dependencies:
+      '@duckdb/duckdb-wasm':
+        specifier: 1.33.1-dev57.0
+        version: 1.33.1-dev57.0
       '@heroicons/react':
         specifier: ^2.2.0
         version: 2.2.0(react@19.3.0)
@@ -17,9 +20,6 @@ importers:
         specifier: ^4.1.0
         version: 4.4.0
     devDependencies:
-      '@duckdb/duckdb-wasm':
-        specifier: 1.33.1-dev57.0
-        version: 1.33.1-dev57.0
       '@types/node':
         specifier: ^26.0.0
         version: 26.5.1

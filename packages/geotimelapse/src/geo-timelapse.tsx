@@ -16,6 +16,7 @@ const defaultFormat = (value: number) => Math.round(value).toLocaleString('en-US
 function Stage({
   source,
   mapboxAccessToken,
+  initialBounds,
   dateLabel,
   timeZoneLabel,
   formatValue = defaultFormat,
@@ -148,7 +149,12 @@ function Stage({
         uiVisible ? '' : 'cursor-none! **:cursor-none!',
       ].join(' ')}
     >
-      <TimelapseMap frames={frames} mapboxAccessToken={mapboxAccessToken} onBoundsChange={onBoundsChange} />
+      <TimelapseMap
+        frames={frames}
+        mapboxAccessToken={mapboxAccessToken}
+        initialBounds={initialBounds}
+        onBoundsChange={onBoundsChange}
+      />
       <MapBoundsProvider value={bounds}>
         <SettingsMenu
           visible={uiVisible}

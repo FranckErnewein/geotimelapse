@@ -37,24 +37,18 @@
     "test": "tsx --test src/utils.test.ts"
   },
   "peerDependencies": {
-    "@duckdb/duckdb-wasm": ">=1.28.0-0",
     "deck.gl": ">=9.4.0",
     "mapbox-gl": ">=3.0.0",
     "react": ">=19.0.0",
     "react-dom": ">=19.0.0",
     "react-map-gl": ">=8.0.0"
   },
-  "peerDependenciesMeta": {
-    "@duckdb/duckdb-wasm": {
-      "optional": true
-    }
-  },
   "dependencies": {
+    "@duckdb/duckdb-wasm": "1.33.1-dev57.0",
     "@heroicons/react": "^2.2.0",
     "date-fns": "^4.1.0"
   },
   "devDependencies": {
-    "@duckdb/duckdb-wasm": "1.33.1-dev57.0",
     "@types/node": "^26.0.0",
     "@types/react": "^19.0.0",
     "deck.gl": "^9.4.0",

@@ -49,6 +49,8 @@ export interface GeoTimelapseSource {
 export interface GeoTimelapseProps {
   source: GeoTimelapseSource;
   mapboxAccessToken: string;
+  /** Area the map initially fits; defaults to the continental US. */
+  initialBounds?: MapBounds;
   /** Shown before the clock time, e.g. "Sat, Sep 5, 2026". */
   dateLabel?: string;
   /** Shown after the clock time, e.g. "EDT". */

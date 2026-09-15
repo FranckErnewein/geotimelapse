@@ -6,10 +6,33 @@ export interface DuckDbSourceOptions {
   /** URL of the day's parquet: day_second INT (seconds since the day's
    *  midnight, sorted), a value column, lat/lon FLOAT. ~60M rows is fine. */
   parquetUrl: string;
-  /** Engine bundles, e.g. self-hosted files or duckdb.getJsDelivrBundles(). */
-  bundles: duckdb.DuckDBBundles;
+  /**
+   * Where the duckdb-wasm engine files come from. Omitted: version-matched
+   * jsDelivr URLs (zero config, external CDN). A string: the base URL you
+   * serve `@duckdb/duckdb-wasm/dist` under — serve the copy THIS package
+   * resolves, so the wasm matches the JS. An object: full bundle control.
+   */
+  engine?: string | duckdb.DuckDBBundles;
   /** Name of the parquet column summed into totals().value. */
   valueColumn?: string;
+}
+
+function resolveBundles(engine: DuckDbSourceOptions['engine']): duckdb.DuckDBBundles {
+  if (!engine) return duckdb.getJsDelivrBundles();
+  if (typeof engine === 'string') {
+    const base = engine.replace(/\/$/, '');
+    return {
+      mvp: {
+        mainModule: `${base}/duckdb-mvp.wasm`,
+        mainWorker: `${base}/duckdb-browser-mvp.worker.js`,
+      },
+      eh: {
+        mainModule: `${base}/duckdb-eh.wasm`,
+        mainWorker: `${base}/duckdb-browser-eh.worker.js`,
+      },
+    };
+  }
+  return engine;
 }
 
 /**
@@ -18,7 +41,7 @@ export interface DuckDbSourceOptions {
  * Each source owns its own engine instance (worker), so two components never
  * share state — at the price of one table copy per instance.
  */
-export function createDuckDbSource({ parquetUrl, bundles, valueColumn = 'value' }: DuckDbSourceOptions): GeoTimelapseSource {
+export function createDuckDbSource({ parquetUrl, engine, valueColumn = 'value' }: DuckDbSourceOptions): GeoTimelapseSource {
   let dbPromise: Promise<duckdb.AsyncDuckDB> | null = null;
   let connPromise: Promise<duckdb.AsyncDuckDBConnection> | null = null;
   let loadPromise: Promise<void> | null = null;
@@ -31,8 +54,10 @@ export function createDuckDbSource({ parquetUrl, bundles, valueColumn = 'value' 
 
   const getDB = () =>
     (dbPromise ??= (async () => {
-      const bundle = await duckdb.selectBundle(bundles);
-      const worker = new Worker(bundle.mainWorker!);
+      const bundle = await duckdb.selectBundle(resolveBundles(engine));
+      // createWorker wraps cross-origin worker URLs (the jsDelivr default)
+      // in a same-origin blob; a plain `new Worker` would be blocked.
+      const worker = await duckdb.createWorker(bundle.mainWorker!);
       const db = new duckdb.AsyncDuckDB(new duckdb.ConsoleLogger(duckdb.LogLevel.WARNING), worker);
       await db.instantiate(bundle.mainModule);
       return db;
