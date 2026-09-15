@@ -31,6 +31,9 @@ export default function LabPage() {
     <div className="flex h-screen flex-col">
       <header className="flex items-center gap-6 border-b border-white/10 px-4 py-2 font-mono text-xs">
         <span className="font-bold">geotimelapse lab</span>
+        <a href="/lab/glow" className="text-white/60 underline hover:text-white">
+          glow only →
+        </a>
         <label className="flex items-center gap-2">
           events
           <select
