@@ -55,9 +55,12 @@ export function createDuckDbSource({ parquetUrl, engine, valueColumn = 'value' }
   const getDB = () =>
     (dbPromise ??= (async () => {
       const bundle = await duckdb.selectBundle(resolveBundles(engine));
-      // createWorker wraps cross-origin worker URLs (the jsDelivr default)
-      // in a same-origin blob; a plain `new Worker` would be blocked.
-      const worker = await duckdb.createWorker(bundle.mainWorker!);
+      const workerUrl = bundle.mainWorker!;
+      // A same-origin worker loads directly (and its requests carry the
+      // page's cookies); cross-origin URLs (the jsDelivr default) need
+      // createWorker's same-origin blob wrapper or the browser blocks them.
+      const sameOrigin = new URL(workerUrl, globalThis.location.href).origin === globalThis.location.origin;
+      const worker = sameOrigin ? new Worker(workerUrl) : await duckdb.createWorker(workerUrl);
       const db = new duckdb.AsyncDuckDB(new duckdb.ConsoleLogger(duckdb.LogLevel.WARNING), worker);
       await db.instantiate(bundle.mainModule);
       return db;
@@ -110,14 +113,14 @@ export function createDuckDbSource({ parquetUrl, engine, valueColumn = 'value' }
       // schema-agnostic. The source order (sorted by day_second) is what
       // gives the in-memory table its zonemap pruning.
       await conn.query(`
-        CREATE TABLE events AS
+        CREATE OR REPLACE TABLE events AS
         SELECT day_second, ${valueColumn} AS value, lat, lon
         FROM read_parquet('replay.parquet')
       `);
       // Per-second counts within the current scope, the single base both
       // aggregates derive from — so consumers never rescan the raw rows.
       await conn.query(`
-        CREATE TABLE scope_seconds AS
+        CREATE OR REPLACE TABLE scope_seconds AS
         SELECT day_second, count(*) AS events, sum(value) AS value
         FROM events
         GROUP BY day_second
