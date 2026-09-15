@@ -23,6 +23,11 @@
       "import": "./dist/duckdb-source.js",
       "default": "./dist/duckdb-source.js"
     },
+    "./synthetic": {
+      "types": "./dist/synthetic-source.d.ts",
+      "import": "./dist/synthetic-source.js",
+      "default": "./dist/synthetic-source.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [

@@ -1,0 +1,4 @@
+@import 'tailwindcss';
+
+/* The component library is styled with tailwind classes: scan its sources. */
+@source '../../../packages/geotimelapse/src';
