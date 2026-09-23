@@ -3,15 +3,19 @@ import type { FramePoints, GeoTimelapseSource, MapBounds, Totals } from './types
 export interface SyntheticSourceOptions {
   /** Total events over the day. */
   total: number;
-  /** 'point': everything on one exact spot; 'uniform': spread over the
-   *  bounds; 'clusters': gaussian hotspots (the realistic default). */
-  distribution?: 'point' | 'uniform' | 'clusters';
   /** Area events land in; defaults to the continental US. */
   bounds?: MapBounds;
   clusterCount?: number;
   /** Same seed, same day — handy to compare tunings. */
   seed?: number;
 }
+
+// Every dataset mixes the three spatial regimes the renderer must handle:
+// gaussian clusters, a diffuse background, and exact-spot stacks of
+// geometrically increasing size (to exercise the weight-driven brightness).
+const UNIFORM_SHARE = 0.25;
+const POINT_SHARE = 0.05;
+const POINT_STACKS = 5;
 
 const CONTINENTAL_US: MapBounds = { west: -124.7, south: 24.5, east: -66.9, north: 49.4 };
 const DAY_SECONDS = 86400;
@@ -50,12 +54,11 @@ function lowerBound(array: Uint32Array, value: number): number {
 /**
  * A GeoTimelapseSource generating a deterministic synthetic day in memory —
  * no engine, no network. Made for benches, demos and tests: pick a volume and
- * a spatial distribution, and the component runs on it like on real data.
+ * the component runs on it like on real data.
  * Each event has value 1, so totals().value mirrors the event count.
  */
 export function createSyntheticSource({
   total,
-  distribution = 'clusters',
   bounds = CONTINENTAL_US,
   clusterCount = 12,
   seed = 42,
@@ -88,6 +91,12 @@ export function createSyntheticSource({
 
       const width = bounds.east - bounds.west;
       const height = bounds.north - bounds.south;
+      const hotspots = Array.from({ length: POINT_STACKS }, (_, i) => ({
+        lon: bounds.west + width * (0.2 + 0.6 * rng()),
+        lat: bounds.south + height * (0.2 + 0.6 * rng()),
+        pull: 2 ** i,
+      }));
+      const hotspotPullSum = hotspots.reduce((a, h) => a + h.pull, 0);
       const centers = Array.from({ length: clusterCount }, () => ({
         lon: bounds.west + width * (0.1 + 0.8 * rng()),
         lat: bounds.south + height * (0.1 + 0.8 * rng()),
@@ -108,10 +117,20 @@ export function createSyntheticSource({
         minuteCounts[minute] = count;
         for (let i = 0; i < count; i++, index++) {
           seconds[index] = minute * 60 + Math.min(Math.floor((i + rng()) * (60 / Math.max(count, 1))), 59);
-          if (distribution === 'point') {
-            lons[index] = bounds.west + width / 2;
-            lats[index] = bounds.south + height / 2;
-          } else if (distribution === 'uniform') {
+          const roll = rng();
+          if (roll < POINT_SHARE) {
+            let pick = rng() * hotspotPullSum;
+            let hotspot = hotspots[0];
+            for (const candidate of hotspots) {
+              pick -= candidate.pull;
+              if (pick <= 0) {
+                hotspot = candidate;
+                break;
+              }
+            }
+            lons[index] = hotspot.lon;
+            lats[index] = hotspot.lat;
+          } else if (roll < POINT_SHARE + UNIFORM_SHARE) {
             lons[index] = bounds.west + width * rng();
             lats[index] = bounds.south + height * rng();
           } else {
