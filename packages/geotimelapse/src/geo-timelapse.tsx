@@ -17,7 +17,7 @@ function Stage({
   source,
   mapboxAccessToken,
   initialBounds,
-  pointAlpha,
+  tuning,
   dateLabel,
   timeZoneLabel,
   formatValue = defaultFormat,
@@ -155,7 +155,7 @@ function Stage({
         frames={frames.slice(0, trailFrames)}
         mapboxAccessToken={mapboxAccessToken}
         initialBounds={initialBounds}
-        pointAlpha={pointAlpha}
+        tuning={tuning}
         onBoundsChange={onBoundsChange}
       />
       <MapBoundsProvider value={bounds}>
