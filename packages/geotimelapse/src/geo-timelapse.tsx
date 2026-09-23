@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { MapBoundsProvider } from './bounds.js';
 import { DAY_SECONDS, TimelapseClockProvider, useTimelapseClock } from './clock.js';
 import Counter from './counter.js';
-import { useFps, useFrameHistory, useMinuteActivity } from './hooks.js';
+import { useAdaptiveTrailFrames, useFps, useFrameHistory, useMinuteActivity } from './hooks.js';
 import TimelapseMap from './map.js';
 import PlayerBar from './player-bar.js';
 import SettingsMenu from './settings-menu.js';
@@ -39,6 +39,7 @@ function Stage({
   const [bounds, setBounds] = useState<MapBounds | null>(null);
 
   const frames = useFrameHistory(source, ready);
+  const trailFrames = useAdaptiveTrailFrames();
   const fps = useFps();
   const activity = useMinuteActivity(source, ready, scopeVersion);
 
@@ -151,7 +152,7 @@ function Stage({
       ].join(' ')}
     >
       <TimelapseMap
-        frames={frames}
+        frames={frames.slice(0, trailFrames)}
         mapboxAccessToken={mapboxAccessToken}
         initialBounds={initialBounds}
         pointAlpha={pointAlpha}
@@ -168,6 +169,7 @@ function Stage({
           onToggleScoped={() => setScoped((value) => !value)}
           frame={frames[0]}
           fps={fps}
+          trailFrames={trailFrames}
         />
         <Counter
           source={source}

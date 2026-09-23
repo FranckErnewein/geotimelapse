@@ -102,6 +102,38 @@ export function useMinuteActivity(source: GeoTimelapseSource, ready: boolean, sc
   return activity;
 }
 
+/**
+ * Trail length that adapts to the achieved frame rate: under 24 fps ghosts
+ * are shed one per second, above 58 fps they come back, up to FRAME_HISTORY.
+ * (58, not 60: a 60 Hz display — the TV target — never reads past 60.) The
+ * 1s sampling window doubles as a cooldown so the count settles instead of
+ * oscillating across the wide 24-58 dead band.
+ */
+export function useAdaptiveTrailFrames(): number {
+  const [count, setCount] = useState(FRAME_HISTORY);
+
+  useEffect(() => {
+    let rafId = 0;
+    let ticks = 0;
+    let windowStart = performance.now();
+    const loop = (now: number) => {
+      ticks += 1;
+      if (now - windowStart >= 1000) {
+        const fps = (ticks * 1000) / (now - windowStart);
+        if (fps < 24) setCount((current) => Math.max(current - 1, 2));
+        else if (fps > 58) setCount((current) => Math.min(current + 1, FRAME_HISTORY));
+        ticks = 0;
+        windowStart = now;
+      }
+      rafId = requestAnimationFrame(loop);
+    };
+    rafId = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(rafId);
+  }, []);
+
+  return count;
+}
+
 /** Rendered frames per second, sampled twice a second. */
 export function useFps(): number {
   const [fps, setFps] = useState(0);
