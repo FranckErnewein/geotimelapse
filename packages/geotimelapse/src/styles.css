@@ -1,0 +1,10 @@
+/*
+ * Compiled at build time into dist/styles.css: only the utilities these
+ * components use, and no preflight — importing it must never restyle the
+ * host app. Consumers who already run Tailwind v4 can skip it and @source
+ * the package instead.
+ */
+@layer theme, utilities;
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities);
+@source './';

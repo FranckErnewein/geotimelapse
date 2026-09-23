@@ -28,6 +28,7 @@
       "import": "./dist/synthetic-source.js",
       "default": "./dist/synthetic-source.js"
     },
+    "./styles.css": "./dist/styles.css",
     "./package.json": "./package.json"
   },
   "files": [
@@ -36,7 +37,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json && tailwindcss -i src/styles.css -o dist/styles.css --minify",
     "prepublishOnly": "pnpm build",
     "typecheck": "tsc --noEmit",
     "test": "tsx --test src/*.test.ts"
@@ -62,6 +63,8 @@
     "react-dom": "^19.0.0",
     "react-map-gl": "^8.1.0",
     "tsx": "^4.19.0",
-    "typescript": "^5.9.0"
+    "typescript": "^5.9.0",
+    "@tailwindcss/cli": "^4.1.0",
+    "tailwindcss": "^4.1.0"
   }
 }
