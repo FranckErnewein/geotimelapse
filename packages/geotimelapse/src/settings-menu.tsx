@@ -15,6 +15,7 @@ import {
 import { useMapBounds } from './bounds.js';
 import { useIsPlaying, useTimelapseClock } from './clock.js';
 import type { FrameBids } from './hooks.js';
+import { FRAME_HISTORY } from './hooks.js';
 
 interface RowProps {
   icon: ComponentType<SVGProps<SVGSVGElement>>;
@@ -51,6 +52,8 @@ interface SettingsMenuProps {
   onToggleScoped: () => void;
   frame?: FrameBids;
   fps: number;
+  /** Ghost frames currently rendered by the adaptive trail. */
+  trailFrames: number;
 }
 
 export default function SettingsMenu({
@@ -63,6 +66,7 @@ export default function SettingsMenu({
   onToggleScoped,
   frame,
   fps,
+  trailFrames,
 }: SettingsMenuProps) {
   const clock = useTimelapseClock();
   const playing = useIsPlaying();
@@ -102,7 +106,8 @@ export default function SettingsMenu({
               </div>
             )}
             <div>
-              {fps} fps{frame ? ` · ${frame.count.toLocaleString('en-US')} pts · ${frame.queryMs} ms` : ''}
+              {fps} fps · {trailFrames}/{FRAME_HISTORY} ghosts
+              {frame ? ` · ${frame.count.toLocaleString('en-US')} pts · ${frame.queryMs} ms` : ''}
             </div>
           </div>
         </div>
