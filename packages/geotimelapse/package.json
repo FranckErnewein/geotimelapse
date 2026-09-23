@@ -39,7 +39,7 @@
     "build": "tsc -p tsconfig.build.json",
     "prepublishOnly": "pnpm build",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test src/utils.test.ts"
+    "test": "tsx --test src/*.test.ts"
   },
   "peerDependencies": {
     "deck.gl": ">=9.4.0",
