@@ -6,7 +6,7 @@ import DeckGL, { WebMercatorViewport } from 'deck.gl';
 import type { MapRef } from 'react-map-gl/mapbox';
 import Map from 'react-map-gl/mapbox';
 
-import { buildGlowLayers } from './glow-layer.js';
+import { buildGlowLayers, DEFAULT_GLOW_TUNING } from './glow-layer.js';
 import type { FrameBids } from './hooks.js';
 import { mapStyle } from './map-style.js';
 import type { MapBounds } from './types.js';
@@ -32,11 +32,13 @@ export default function TimelapseMap({
   frames,
   mapboxAccessToken,
   initialBounds,
+  pointAlpha,
   onBoundsChange,
 }: {
   frames: FrameBids[];
   mapboxAccessToken: string;
   initialBounds?: MapBounds;
+  pointAlpha?: number;
   onBoundsChange: (bounds: MapBounds) => void;
 }) {
   const deckRef = useRef<DeckGLRef>(null);
@@ -81,7 +83,10 @@ export default function TimelapseMap({
     onBoundsChange({ west: round(west), south: round(south), east: round(east), north: round(north) });
   };
 
-  const layers = buildGlowLayers(frames);
+  const layers = buildGlowLayers(
+    frames,
+    pointAlpha === undefined ? DEFAULT_GLOW_TUNING : { ...DEFAULT_GLOW_TUNING, pointAlpha },
+  );
 
   return (
     <div ref={containerRef} className="absolute inset-0">

@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import type { GeoTimelapseSource } from 'geotimelapse';
 import { GeoTimelapse } from 'geotimelapse';
-import type { SyntheticSourceOptions } from 'geotimelapse/synthetic';
 import { createSyntheticSource } from 'geotimelapse/synthetic';
 
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -11,21 +10,19 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 const MAPBOX_TOKEN = 'pk.eyJ1IjoiZnJhbmNrZXJuZXdlaW4iLCJhIjoiYXJLM0dISSJ9.mod0ppb2kjzuMy8j1pl0Bw';
 
 const TOTALS = [5, 500, 5_000, 50_000, 500_000, 5_000_000];
-const DISTRIBUTIONS = ['point', 'uniform', 'clusters'] as const;
 
 const number = new Intl.NumberFormat('en-US');
 
 export default function LabPage() {
   const [total, setTotal] = useState(500_000);
-  const [distribution, setDistribution] = useState<NonNullable<SyntheticSourceOptions['distribution']>>('clusters');
   const [seed, setSeed] = useState(42);
   const [source, setSource] = useState<GeoTimelapseSource | null>(null);
 
   useEffect(() => {
-    const created = createSyntheticSource({ total, distribution, seed });
+    const created = createSyntheticSource({ total, seed });
     setSource(created);
     return () => void created.dispose();
-  }, [total, distribution, seed]);
+  }, [total, seed]);
 
   return (
     <div className="flex h-screen flex-col">
@@ -48,20 +45,6 @@ export default function LabPage() {
             ))}
           </select>
         </label>
-        <label className="flex items-center gap-2">
-          distribution
-          <select
-            value={distribution}
-            onChange={(event) => setDistribution(event.target.value as (typeof DISTRIBUTIONS)[number])}
-            className="rounded-sm border border-white/20 bg-black px-2 py-1"
-          >
-            {DISTRIBUTIONS.map((value) => (
-              <option key={value} value={value}>
-                {value}
-              </option>
-            ))}
-          </select>
-        </label>
         <button
           type="button"
           onClick={() => setSeed((value) => value + 1)}
@@ -73,7 +56,7 @@ export default function LabPage() {
       <div className="min-h-0 flex-1">
         {source && (
           <GeoTimelapse
-            key={`${total}-${distribution}-${seed}`}
+            key={`${total}-${seed}`}
             source={source}
             mapboxAccessToken={MAPBOX_TOKEN}
             dateLabel="Synthetic day"
