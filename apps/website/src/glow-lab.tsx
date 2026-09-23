@@ -123,9 +123,6 @@ function GlowLabPage() {
     <div className="flex h-screen flex-col">
       <header className="flex flex-wrap items-center gap-x-6 gap-y-2 border-b border-white/10 px-4 py-2 font-mono text-xs">
         <span className="font-bold">glow lab</span>
-        <a href="../" className="text-white/60 underline hover:text-white">
-          ← full lab
-        </a>
         <span className="text-white/50">
           bands: cluster / fog / stack / mix · columns: {COLUMN_COUNTS.map((value) => number.format(value)).join(' · ')}
         </span>

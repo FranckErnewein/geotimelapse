@@ -13,7 +13,6 @@ export default defineConfig(({ command }) => ({
       input: {
         home: resolve(import.meta.dirname, 'index.html'),
         lab: resolve(import.meta.dirname, 'lab/index.html'),
-        glow: resolve(import.meta.dirname, 'lab/glow/index.html'),
       },
     },
   },
