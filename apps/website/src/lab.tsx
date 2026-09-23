@@ -1,10 +1,10 @@
-'use client';
-
 import { useEffect, useState } from 'react';
+import { createRoot } from 'react-dom/client';
 import type { GeoTimelapseSource } from 'geotimelapse';
 import { GeoTimelapse } from 'geotimelapse';
 import { createSyntheticSource } from 'geotimelapse/synthetic';
 
+import './styles.css';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
 const MAPBOX_TOKEN = 'pk.eyJ1IjoiZnJhbmNrZXJuZXdlaW4iLCJhIjoiYXJLM0dISSJ9.mod0ppb2kjzuMy8j1pl0Bw';
@@ -13,7 +13,7 @@ const TOTALS = [5, 500, 5_000, 50_000, 500_000, 5_000_000];
 
 const number = new Intl.NumberFormat('en-US');
 
-export default function LabPage() {
+function LabPage() {
   const [total, setTotal] = useState(500_000);
   const [seed, setSeed] = useState(42);
   const [source, setSource] = useState<GeoTimelapseSource | null>(null);
@@ -28,7 +28,7 @@ export default function LabPage() {
     <div className="flex h-screen flex-col">
       <header className="flex items-center gap-6 border-b border-white/10 px-4 py-2 font-mono text-xs">
         <span className="font-bold">geotimelapse lab</span>
-        <a href="/lab/glow" className="text-white/60 underline hover:text-white">
+        <a href="glow/" className="text-white/60 underline hover:text-white">
           glow only →
         </a>
         <label className="flex items-center gap-2">
@@ -68,3 +68,5 @@ export default function LabPage() {
     </div>
   );
 }
+
+createRoot(document.getElementById('root')!).render(<LabPage />);
