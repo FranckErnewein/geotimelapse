@@ -1,10 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { createRoot } from 'react-dom/client';
 import DeckGL from 'deck.gl';
 import type { FrameBids, GlowTuning } from 'geotimelapse';
 import { buildGlowLayers, DEFAULT_GLOW_TUNING } from 'geotimelapse';
-
-import './styles.css';
 
 const number = new Intl.NumberFormat('en-US');
 
@@ -107,7 +104,7 @@ function useFps(): number {
 }
 
 /** The glow layer out of time: a static calibration grid, direct tuning knobs. */
-function GlowLabPage() {
+export function GlowLab() {
   const [seed, setSeed] = useState(42);
   const [pointAlpha, setPointAlpha] = useState(DEFAULT_GLOW_TUNING.pointAlpha);
   const [flashRadius, setFlashRadius] = useState(DEFAULT_GLOW_TUNING.flashRadius);
@@ -188,5 +185,3 @@ function GlowLabPage() {
     </div>
   );
 }
-
-createRoot(document.getElementById('root')!).render(<GlowLabPage />);
