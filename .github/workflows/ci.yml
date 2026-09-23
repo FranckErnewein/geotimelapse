@@ -22,4 +22,4 @@ jobs:
       - run: pnpm format:check
       - run: pnpm test
       - run: pnpm dlx publint packages/geotimelapse
-      - run: pnpm dlx @arethetypeswrong/cli --pack packages/geotimelapse
+      - run: pnpm dlx @arethetypeswrong/cli --pack packages/geotimelapse --profile esm-only
