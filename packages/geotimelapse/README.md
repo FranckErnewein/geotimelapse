@@ -6,25 +6,6 @@ and a TV mode (autoplay, loop, self-hiding UI and cursor).
 
 **[Live glow lab →](https://franckernewein.github.io/geotimelapse/)**
 
-## Why it looks the way it does
-
-- **Additive light, not markers** — every event is a tiny point light with a
-  gaussian halo, blended additively: density builds the brightness, and
-  hotspots bloom toward white the way long-exposure photos do.
-- **Ground-anchored radii** — point radii are meters, not pixels, so the glow
-  reads the same at every zoom level; heavy stacks approach a pixel ceiling
-  asymptotically instead of clipping into flat discs.
-- **Weight-scaled brightness** — co-located events are aggregated into one
-  draw whose halo amplitude follows a film-exposure response on √count.
-- **A trail that breathes** — each frame leaves ghosts that shrink and fade
-  with age, and the trail length adapts to the achieved frame rate (sheds
-  ghosts under 24 fps, grows them back above 58).
-- **A full player** — per-minute activity waveform as the seek bar, running
-  totals, hour axis, fullscreen TV mode.
-- **Data-agnostic** — the component talks to a small `GeoTimelapseSource`
-  contract; bring any backend, or use the bundled duckdb-wasm and synthetic
-  sources.
-
 ## Install
 
 ```sh
