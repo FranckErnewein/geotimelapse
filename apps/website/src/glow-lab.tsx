@@ -1,9 +1,10 @@
-'use client';
-
 import { useEffect, useMemo, useState } from 'react';
+import { createRoot } from 'react-dom/client';
 import DeckGL from 'deck.gl';
 import type { FrameBids, GlowTuning } from 'geotimelapse';
 import { buildGlowLayers, DEFAULT_GLOW_TUNING } from 'geotimelapse';
+
+import './styles.css';
 
 const number = new Intl.NumberFormat('en-US');
 
@@ -106,7 +107,7 @@ function useFps(): number {
 }
 
 /** The glow layer out of time: a static calibration grid, direct tuning knobs. */
-export default function GlowLabPage() {
+function GlowLabPage() {
   const [seed, setSeed] = useState(42);
   const [pointAlpha, setPointAlpha] = useState(DEFAULT_GLOW_TUNING.pointAlpha);
   const [flashRadius, setFlashRadius] = useState(DEFAULT_GLOW_TUNING.flashRadius);
@@ -122,6 +123,9 @@ export default function GlowLabPage() {
     <div className="flex h-screen flex-col">
       <header className="flex flex-wrap items-center gap-x-6 gap-y-2 border-b border-white/10 px-4 py-2 font-mono text-xs">
         <span className="font-bold">glow lab</span>
+        <a href="../" className="text-white/60 underline hover:text-white">
+          ← full lab
+        </a>
         <span className="text-white/50">
           bands: cluster / fog / stack / mix · columns: {COLUMN_COUNTS.map((value) => number.format(value)).join(' · ')}
         </span>
@@ -187,3 +191,5 @@ export default function GlowLabPage() {
     </div>
   );
 }
+
+createRoot(document.getElementById('root')!).render(<GlowLabPage />);
