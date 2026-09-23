@@ -1,3 +1,5 @@
+import type { GlowTuning } from './glow-layer.js';
+
 /** Visible map area in degrees, WGS84. */
 export interface MapBounds {
   west: number;
@@ -51,10 +53,10 @@ export interface GeoTimelapseProps {
   mapboxAccessToken: string;
   /** Area the map initially fits; defaults to the continental US. */
   initialBounds?: MapBounds;
-  /** Per-point alpha of the glow, 0-255. Calibrate to the day's density:
-   *  the playback trail stacks 12 additive frames, so dense datasets need it
-   *  well below the single-frame bench value. */
-  pointAlpha?: number;
+  /** Overrides on the glow rendering knobs (see GlowTuning). Calibrate
+   *  pointAlpha to the day's density: the playback trail stacks 12 additive
+   *  frames, so dense datasets need it well below the bench value. */
+  tuning?: Partial<GlowTuning>;
   /** Shown before the clock time, e.g. "Sat, Sep 5, 2026". */
   dateLabel?: string;
   /** Shown after the clock time, e.g. "EDT". */
