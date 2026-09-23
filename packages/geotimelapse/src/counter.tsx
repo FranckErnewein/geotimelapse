@@ -66,7 +66,8 @@ export default function Counter({
       disposed = true;
       unsubscribe();
     };
-    // scopeVersion re-runs the effect so a re-scoped source is re-read.
+    // ready and scopeVersion re-run the effect so a re-scoped source is re-read.
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies
   }, [clock, source, ready, scopeVersion]);
 
   return (

@@ -117,7 +117,6 @@ export const DEFAULT_GLOW_TUNING: GlowTuning = {
   trailFrames: 12,
 };
 
-
 function radiusForAge(age: number, tuning: GlowTuning): number {
   if (age === 0) return tuning.flashRadius;
   const taper = (age - 1) / Math.max(tuning.trailFrames - 2, 1);
