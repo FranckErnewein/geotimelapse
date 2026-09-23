@@ -96,8 +96,15 @@ need it well below the single-frame value. Other knobs: `flashRadius`,
 
 ### Styling
 
-Components are styled with Tailwind CSS v4 classes. Add the package to your
-Tailwind sources so they get generated:
+Import the compiled stylesheet once — no Tailwind required in your app:
+
+```ts
+import 'geotimelapse/styles.css';
+```
+
+It carries only the utilities the components use, no global reset. If your
+app already runs Tailwind CSS v4, you can scan the package instead and skip
+the import:
 
 ```css
 @import 'tailwindcss';
