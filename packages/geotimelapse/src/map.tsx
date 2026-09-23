@@ -12,7 +12,6 @@ import type { FrameBids } from './hooks.js';
 import { mapStyle } from './map-style.js';
 import type { MapBounds } from './types.js';
 
-
 interface ViewState {
   longitude: number;
   latitude: number;
@@ -47,7 +46,9 @@ export default function TimelapseMap({
   const containerRef = useRef<HTMLDivElement>(null);
   // Fitting bounds needs the container size, unknown before the first layout;
   // the map mounts one frame later, invisible on the black stage.
-  const [initialViewState, setInitialViewState] = useState<ViewState | null>(initialBounds ? null : CONTINENTAL_US_VIEW);
+  const [initialViewState, setInitialViewState] = useState<ViewState | null>(
+    initialBounds ? null : CONTINENTAL_US_VIEW,
+  );
 
   useLayoutEffect(() => {
     if (!initialBounds || initialViewState) return;

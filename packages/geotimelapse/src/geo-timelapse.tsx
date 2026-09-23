@@ -59,6 +59,8 @@ function Stage({
   // reader until its own load resolves.
   useEffect(() => {
     let disposed = false;
+    // Re-gating must track the source swap itself, not a render.
+    // oxlint-disable-next-line react/set-state-in-effect
     setReady(false);
     setProgress(null);
     setLoadError(null);

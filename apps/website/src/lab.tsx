@@ -20,6 +20,8 @@ function LabPage() {
 
   useEffect(() => {
     const created = createSyntheticSource({ total, seed });
+    // The resource must be created here so this effect's cleanup disposes exactly what it made.
+    // oxlint-disable-next-line react/set-state-in-effect
     setSource(created);
     return () => void created.dispose();
   }, [total, seed]);

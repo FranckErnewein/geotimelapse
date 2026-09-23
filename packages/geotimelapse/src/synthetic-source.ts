@@ -18,7 +18,6 @@ const POINT_SHARE = 0.05;
 const POINT_STACKS = 5;
 
 const CONTINENTAL_US: MapBounds = { west: -124.7, south: 24.5, east: -66.9, north: 49.4 };
-const DAY_SECONDS = 86400;
 const MINUTES = 24 * 60;
 
 // Deterministic PRNG (mulberry32).

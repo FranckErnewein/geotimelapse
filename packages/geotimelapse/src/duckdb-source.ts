@@ -41,7 +41,11 @@ function resolveBundles(engine: DuckDbSourceOptions['engine']): duckdb.DuckDBBun
  * Each source owns its own engine instance (worker), so two components never
  * share state — at the price of one table copy per instance.
  */
-export function createDuckDbSource({ parquetUrl, engine, valueColumn = 'value' }: DuckDbSourceOptions): GeoTimelapseSource {
+export function createDuckDbSource({
+  parquetUrl,
+  engine,
+  valueColumn = 'value',
+}: DuckDbSourceOptions): GeoTimelapseSource {
   let dbPromise: Promise<duckdb.AsyncDuckDB> | null = null;
   let connPromise: Promise<duckdb.AsyncDuckDBConnection> | null = null;
   let loadPromise: Promise<void> | null = null;

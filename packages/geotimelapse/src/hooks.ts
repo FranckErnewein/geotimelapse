@@ -79,13 +79,19 @@ export function useFrameHistory(source: GeoTimelapseSource, ready: boolean): Fra
       disposed = true;
       unsubscribe();
     };
+    // ready re-arms the reader once the source has loaded.
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies
   }, [clock, source, ready]);
 
   return frames;
 }
 
 /** Event count for each minute of the replayed day, within the current scope. */
-export function useMinuteActivity(source: GeoTimelapseSource, ready: boolean, scopeVersion: number): Float32Array | null {
+export function useMinuteActivity(
+  source: GeoTimelapseSource,
+  ready: boolean,
+  scopeVersion: number,
+): Float32Array | null {
   const [activity, setActivity] = useState<Float32Array | null>(null);
 
   useEffect(() => {
@@ -97,6 +103,8 @@ export function useMinuteActivity(source: GeoTimelapseSource, ready: boolean, sc
     return () => {
       disposed = true;
     };
+    // ready and scopeVersion re-run the effect so a (re)loaded source is re-read.
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies
   }, [source, ready, scopeVersion]);
 
   return activity;
