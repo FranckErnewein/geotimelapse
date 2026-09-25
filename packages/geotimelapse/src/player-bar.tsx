@@ -2,10 +2,10 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-import { DAY_SECONDS, useDaySeconds, useTimelapseClock } from './clock.js';
-import { formatDayTime, formatDayTime24, formatHourLabel } from './utils.js';
+import { usePlayheadSeconds, useTimelapseClock } from './clock.js';
+import type { TimeDomain } from './types.js';
+import { domainTicks, formatHover, formatPlayhead } from './utils.js';
 
-const SEEK_STEP = 60;
 const BAR_PITCH_PX = 1;
 
 const PLAYED_ALPHA = 0.55;
@@ -14,9 +14,12 @@ const FUTURE_ALPHA = 0.22;
 
 // The activity plot is the seek bar: event volume per minute drawn as 1px
 // bars, played minutes brighter than upcoming ones, current one highlighted.
-function ActivitySeekBar({ activity }: { activity: Float32Array | null }) {
+function ActivitySeekBar({ activity, domain }: { activity: Float32Array | null; domain: TimeDomain | null }) {
   const clock = useTimelapseClock();
-  const daySeconds = useDaySeconds();
+  const daySeconds = usePlayheadSeconds();
+  const span = clock.getSpan();
+  // Seeks snap to a bar-friendly grid: the minute for a day, scaled beyond.
+  const seekStep = Math.max(60, Math.round(span / 1440 / 60) * 60);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -30,7 +33,7 @@ function ActivitySeekBar({ activity }: { activity: Float32Array | null }) {
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
       ctx.scale(scale, scale);
-      const fraction = daySeconds / DAY_SECONDS;
+      const fraction = daySeconds / span;
       if (activity) {
         const bucketCount = Math.max(1, Math.floor(width / BAR_PITCH_PX));
         // Average per minute, so a partial last bucket doesn't read as a dip.
@@ -64,27 +67,27 @@ function ActivitySeekBar({ activity }: { activity: Float32Array | null }) {
     const observer = new ResizeObserver(draw);
     observer.observe(canvas);
     return () => observer.disconnect();
-  }, [activity, daySeconds]);
+  }, [activity, daySeconds, span]);
 
   const seekFromPointer = (event: React.PointerEvent<HTMLCanvasElement>) => {
     const rect = event.currentTarget.getBoundingClientRect();
     const fraction = Math.min(Math.max((event.clientX - rect.left) / rect.width, 0), 1);
-    clock.seek(Math.round((fraction * DAY_SECONDS) / SEEK_STEP) * SEEK_STEP);
+    clock.seek(Math.round((fraction * span) / seekStep) * seekStep);
   };
 
   const seekBy = (offset: number) => {
-    clock.seek(Math.min(Math.max(clock.getDaySeconds() + offset, 0), DAY_SECONDS));
+    clock.seek(Math.min(Math.max(clock.getSeconds() + offset, 0), span));
   };
 
   return (
     <canvas
       ref={canvasRef}
       role="slider"
-      aria-label="Time of day"
+      aria-label="Time"
       aria-valuemin={0}
-      aria-valuemax={DAY_SECONDS}
+      aria-valuemax={span}
       aria-valuenow={daySeconds}
-      aria-valuetext={formatDayTime(daySeconds)}
+      aria-valuetext={domain ? formatPlayhead(daySeconds, domain) : ''}
       tabIndex={0}
       className="h-8 w-full cursor-pointer select-none focus-visible:outline-1 focus-visible:outline-white/60"
       onPointerDown={(event) => {
@@ -101,13 +104,13 @@ function ActivitySeekBar({ activity }: { activity: Float32Array | null }) {
         if (event.currentTarget.hasPointerCapture(event.pointerId)) seekFromPointer(event);
       }}
       onKeyDown={(event) => {
-        const step = event.shiftKey ? 10 * SEEK_STEP : SEEK_STEP;
+        const step = event.shiftKey ? 10 * seekStep : seekStep;
         if (event.key === 'ArrowLeft') seekBy(-step);
         else if (event.key === 'ArrowRight') seekBy(step);
-        else if (event.key === 'PageDown') seekBy(-10 * SEEK_STEP);
-        else if (event.key === 'PageUp') seekBy(10 * SEEK_STEP);
+        else if (event.key === 'PageDown') seekBy(-10 * seekStep);
+        else if (event.key === 'PageUp') seekBy(10 * seekStep);
         else if (event.key === 'Home') clock.seek(0);
-        else if (event.key === 'End') clock.seek(DAY_SECONDS);
+        else if (event.key === 'End') clock.seek(span);
         else return;
         event.preventDefault();
       }}
@@ -115,16 +118,17 @@ function ActivitySeekBar({ activity }: { activity: Float32Array | null }) {
   );
 }
 
-// Hour axis under the seek bar: a tick per hour, a label every two.
-function HourAxis() {
+// Time axis under the seek bar, scaled to the domain (hours, days, months).
+function TimeAxis({ domain }: { domain: TimeDomain }) {
+  const ticks = domainTicks(domain);
   return (
     <div className="relative mt-0.5 h-3 font-mono text-[9px] text-white/40 tabular-nums">
-      {Array.from({ length: 25 }, (_, hour) => (
-        <div key={hour} className="absolute top-0" style={{ left: `${(hour / 24) * 100}%` }}>
+      {ticks.map((tick, index) => (
+        <div key={index} className="absolute top-0" style={{ left: `${tick.fraction * 100}%` }}>
           <div className="h-1 w-px bg-white/30" />
-          {hour % 2 === 0 && (
-            <div className={hour === 0 ? '' : hour === 24 ? '-translate-x-full' : '-translate-x-1/2'}>
-              {formatHourLabel(hour)}
+          {tick.label && (
+            <div className={tick.fraction === 0 ? '' : tick.fraction === 1 ? '-translate-x-full' : '-translate-x-1/2'}>
+              {tick.label}
             </div>
           )}
         </div>
@@ -133,7 +137,8 @@ function HourAxis() {
   );
 }
 
-export default function PlayerBar({ activity }: { activity: Float32Array | null }) {
+export default function PlayerBar({ activity, domain }: { activity: Float32Array | null; domain: TimeDomain | null }) {
+  const clock = useTimelapseClock();
   const [hover, setHover] = useState<{ x: number; label: string } | null>(null);
 
   return (
@@ -143,8 +148,9 @@ export default function PlayerBar({ activity }: { activity: Float32Array | null 
         onPointerMove={(event) => {
           const rect = event.currentTarget.getBoundingClientRect();
           const fraction = Math.min(Math.max((event.clientX - rect.left) / rect.width, 0), 1);
-          const minuteSeconds = Math.floor((fraction * DAY_SECONDS) / 60) * 60;
-          setHover({ x: event.clientX - rect.left, label: formatDayTime24(minuteSeconds) });
+          if (!domain) return;
+          const seconds = Math.floor((fraction * clock.getSpan()) / 60) * 60;
+          setHover({ x: event.clientX - rect.left, label: formatHover(seconds, domain) });
         }}
         onPointerLeave={() => setHover(null)}
       >
@@ -156,8 +162,8 @@ export default function PlayerBar({ activity }: { activity: Float32Array | null 
             {hover.label}
           </div>
         )}
-        <ActivitySeekBar activity={activity} />
-        <HourAxis />
+        <ActivitySeekBar activity={activity} domain={domain} />
+        {domain && <TimeAxis domain={domain} />}
       </div>
     </div>
   );

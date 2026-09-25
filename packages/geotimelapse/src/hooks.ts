@@ -38,11 +38,11 @@ export function useFrameHistory(source: GeoTimelapseSource, ready: boolean): Fra
     // One clock tick of replayed time; the widened-window cap for skipped
     // ticks (slow queries, render lag) stays tight — giant catch-up frames
     // feed the lag they compensate for.
-    const windowS = Math.max(Math.round(clock.tickSpanSeconds), 1);
+    const windowS = Math.max(Math.round(clock.getTickSpan()), 1);
     const maxWindowS = 3 * windowS;
 
     const query = async () => {
-      const daySeconds = Math.floor(clock.getDaySeconds());
+      const daySeconds = Math.floor(clock.getSeconds());
       const epoch = clock.getEpoch();
       if (inFlight || (daySeconds === lastQueried && epoch === lastEpoch)) return;
       inFlight = true;

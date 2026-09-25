@@ -3,13 +3,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { MapBoundsProvider } from './bounds.js';
-import { DAY_SECONDS, TimelapseClockProvider, useTimelapseClock } from './clock.js';
+import { TimelapseClockProvider, useTimelapseClock } from './clock.js';
 import Counter from './counter.js';
 import { useAdaptiveTrailFrames, useFps, useFrameHistory, useMinuteActivity } from './hooks.js';
 import TimelapseMap from './map.js';
 import PlayerBar from './player-bar.js';
 import SettingsMenu from './settings-menu.js';
-import type { GeoTimelapseProps, MapBounds } from './types.js';
+import type { GeoTimelapseProps, MapBounds, TimeDomain } from './types.js';
 
 const defaultFormat = (value: number) => Math.round(value).toLocaleString('en-US');
 
@@ -37,6 +37,7 @@ function Stage({
   // nothing overlays a TV-screen replay; any mouse move brings them back.
   const [uiVisible, setUiVisible] = useState(true);
   const [bounds, setBounds] = useState<MapBounds | null>(null);
+  const [domain, setDomain] = useState<TimeDomain | null>(null);
 
   const frames = useFrameHistory(source, ready);
   const trailFrames = useAdaptiveTrailFrames();
@@ -70,6 +71,9 @@ function Stage({
       })
       .then(() => {
         if (disposed) return;
+        const loadedDomain = source.domain();
+        clock.setSpan(loadedDomain.spanSeconds);
+        setDomain(loadedDomain);
         setReady(true);
         clock.play();
       })
@@ -131,11 +135,11 @@ function Stage({
     };
   }, [source, bounds, scoped, ready]);
 
-  // The clock pauses at the end of the day; loop restarts it (play() rewinds).
+  // The clock pauses at the end of the replay; loop restarts it (play() rewinds).
   useEffect(() => {
     if (!loop) return;
     return clock.subscribe(() => {
-      if (!clock.isPlaying() && clock.getDaySeconds() >= DAY_SECONDS) clock.play();
+      if (!clock.isPlaying() && clock.getSeconds() >= clock.getSpan()) clock.play();
     });
   }, [loop, clock]);
 
@@ -174,6 +178,7 @@ function Stage({
           trailFrames={trailFrames}
         />
         <Counter
+          domain={domain}
           source={source}
           ready={ready}
           error={loadError}
@@ -185,7 +190,7 @@ function Stage({
           formatCount={formatCount}
         />
       </MapBoundsProvider>
-      <PlayerBar activity={activity} />
+      <PlayerBar activity={activity} domain={domain} />
     </div>
   );
 }

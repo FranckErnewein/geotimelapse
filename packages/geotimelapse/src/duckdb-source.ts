@@ -1,6 +1,6 @@
 import * as duckdb from '@duckdb/duckdb-wasm';
 
-import type { FramePoints, GeoTimelapseSource, MapBounds, Totals } from './types.js';
+import type { FramePoints, GeoTimelapseSource, MapBounds, TimeDomain, Totals } from './types.js';
 
 export interface DuckDbSourceOptions {
   /** URL of the day's parquet: day_second INT (seconds since the day's
@@ -82,6 +82,8 @@ export function createDuckDbSource({
     WINDOW w AS (ORDER BY day_second)
   `;
 
+  let loadedDomain: TimeDomain = { start: null, spanSeconds: 24 * 3600 };
+
   const load = (onProgress?: (loadedBytes: number, totalBytes: number) => void) => {
     if (onProgress) progressListener = onProgress;
     return (loadPromise ??= (async () => {
@@ -131,6 +133,11 @@ export function createDuckDbSource({
       `);
       await conn.query(CREATE_TOTALS);
       await db.dropFile('replay.parquet');
+      // The day_second column is day-relative: the span is analyzed from the
+      // data, the calendar anchor stays with the consumer (dateLabel prop).
+      const bounds = await conn.query('SELECT max(day_second) AS last FROM events');
+      const last = Number(bounds.toArray()[0]?.last ?? 0);
+      loadedDomain = { start: null, spanSeconds: Math.max(last + 1, 1) };
     })());
   };
 
@@ -234,5 +241,5 @@ export function createDuckDbSource({
     await db?.terminate().catch(() => {});
   };
 
-  return { load, frame, totals, activity, setScope, dispose };
+  return { load, domain: () => loadedDomain, frame, totals, activity, setScope, dispose };
 }

@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from 'react';
 
-import { useDaySeconds, useTimelapseClock } from './clock.js';
-import type { GeoTimelapseSource, Totals } from './types.js';
-import { formatDayTime12 } from './utils.js';
+import { usePlayheadSeconds, useTimelapseClock } from './clock.js';
+import type { GeoTimelapseSource, TimeDomain, Totals } from './types.js';
+import { formatPlayhead } from './utils.js';
 
 interface CounterProps {
   source: GeoTimelapseSource;
@@ -12,6 +12,7 @@ interface CounterProps {
   error: string | null;
   progress: { loadedBytes: number; totalBytes: number } | null;
   scopeVersion: number;
+  domain: TimeDomain | null;
   dateLabel?: string;
   timeZoneLabel?: string;
   formatValue: (value: number) => string;
@@ -24,13 +25,14 @@ export default function Counter({
   error,
   progress,
   scopeVersion,
+  domain,
   dateLabel,
   timeZoneLabel,
   formatValue,
   formatCount,
 }: CounterProps) {
   const clock = useTimelapseClock();
-  const daySeconds = useDaySeconds(60);
+  const daySeconds = usePlayheadSeconds(60);
   const [totals, setTotals] = useState<Totals | null>(null);
   const [queryError, setQueryError] = useState<string | null>(null);
 
@@ -44,7 +46,7 @@ export default function Counter({
     // query is still running, so the counter refreshes as fast as the source
     // can answer and never queues up.
     const query = async () => {
-      const second = Math.floor(clock.getDaySeconds());
+      const second = Math.floor(clock.getSeconds());
       if (inFlight || second === lastQueried) return;
       inFlight = true;
       try {
@@ -78,7 +80,7 @@ export default function Counter({
         <>
           <div className="text-xs text-white/50 tabular-nums">
             {dateLabel && `${dateLabel}, `}
-            {formatDayTime12(daySeconds)}
+            {domain && formatPlayhead(daySeconds, domain)}
             {timeZoneLabel && ` ${timeZoneLabel}`}
           </div>
           <div className="text-2xl tabular-nums">{formatValue(totals.value)}</div>

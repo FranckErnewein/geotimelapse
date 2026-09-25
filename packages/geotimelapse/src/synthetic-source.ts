@@ -1,4 +1,4 @@
-import type { FramePoints, GeoTimelapseSource, MapBounds, Totals } from './types.js';
+import type { FramePoints, GeoTimelapseSource, MapBounds, TimeDomain, Totals } from './types.js';
 
 export interface SyntheticSourceOptions {
   /** Total events over the day. */
@@ -18,6 +18,7 @@ const POINT_SHARE = 0.05;
 const POINT_STACKS = 5;
 
 const CONTINENTAL_US: MapBounds = { west: -124.7, south: 24.5, east: -66.9, north: 49.4 };
+const DAY_SECONDS = 24 * 3600;
 const MINUTES = 24 * 60;
 
 // Deterministic PRNG (mulberry32).
@@ -214,5 +215,7 @@ export function createSyntheticSource({
     loadPromise = null;
   };
 
-  return { load, frame, totals, activity, setScope, dispose };
+  const domain = (): TimeDomain => ({ start: null, spanSeconds: DAY_SECONDS });
+
+  return { load, domain, frame, totals, activity, setScope, dispose };
 }
