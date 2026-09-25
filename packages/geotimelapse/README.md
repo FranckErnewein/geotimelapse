@@ -13,8 +13,7 @@ npm install geotimelapse
 ```
 
 Peer dependencies: `react`, `react-dom`, `deck.gl`, `mapbox-gl`,
-`react-map-gl`. (`@duckdb/duckdb-wasm` is a regular dependency, pulled in only
-when you import `geotimelapse/duckdb`.)
+`react-map-gl`.
 
 ## Usage
 
