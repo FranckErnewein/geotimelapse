@@ -1,7 +1,15 @@
 import assert from 'node:assert';
 import { describe, it } from 'node:test';
 
-import { formatDayTime, formatDayTime12, formatDayTime24, formatHourLabel } from './utils.js';
+import {
+  domainTicks,
+  formatDayTime,
+  formatDayTime12,
+  formatDayTime24,
+  formatHover,
+  formatHourLabel,
+  formatPlayhead,
+} from './utils.js';
 
 describe('formatDayTime', () => {
   it('formats midnight', () => {
@@ -56,5 +64,65 @@ describe('formatHourLabel', () => {
     assert.equal(formatHourLabel(2), '2:00');
     assert.equal(formatHourLabel(13), '13:00');
     assert.equal(formatHourLabel(24), '24:00');
+  });
+});
+
+const DAY = 24 * 3600;
+const JAN_2023 = new Date(2023, 0, 1);
+
+describe('domainTicks', () => {
+  it('keeps the hourly axis for a day span', () => {
+    const ticks = domainTicks({ start: null, spanSeconds: DAY });
+    assert.equal(ticks.length, 25);
+    assert.equal(ticks[0].label, '0:00');
+    assert.equal(ticks[1].label, null);
+    assert.equal(ticks[2].label, '2:00');
+    assert.equal(ticks[24].label, '24:00');
+  });
+
+  it('ticks anchored days for a month span', () => {
+    const ticks = domainTicks({ start: JAN_2023, spanSeconds: 31 * DAY });
+    assert.equal(ticks.length, 30);
+    assert.equal(ticks[0].label, 'Jan 2');
+    assert.equal(ticks[1].label, null);
+    assert.ok(ticks.every((tick) => tick.fraction > 0 && tick.fraction < 1));
+  });
+
+  it('ticks month starts for a year span', () => {
+    const ticks = domainTicks({ start: JAN_2023, spanSeconds: 365 * DAY });
+    assert.equal(ticks.length, 11);
+    assert.equal(ticks[0].label, 'Feb');
+    assert.equal(ticks[10].label, 'Dec');
+  });
+
+  it('falls back to elapsed days without an anchor', () => {
+    const ticks = domainTicks({ start: null, spanSeconds: 10 * DAY });
+    assert.equal(ticks[0].label, 'd0');
+    assert.equal(ticks.at(-1)?.label, 'd10');
+  });
+});
+
+describe('formatPlayhead', () => {
+  it('keeps clock time for a day span', () => {
+    assert.equal(formatPlayhead(9 * 3600, { start: null, spanSeconds: DAY }), '9:00 AM');
+  });
+
+  it('speaks calendar dates on anchored long spans', () => {
+    assert.equal(formatPlayhead(13.5 * DAY, { start: JAN_2023, spanSeconds: 31 * DAY }), 'Jan 14, 12 PM');
+    assert.equal(formatPlayhead(45 * DAY, { start: JAN_2023, spanSeconds: 365 * DAY }), 'Feb 15');
+  });
+
+  it('speaks elapsed days on unanchored long spans', () => {
+    assert.equal(formatPlayhead(13.5 * DAY, { start: null, spanSeconds: 31 * DAY }), 'day 14, 12:00');
+  });
+});
+
+describe('formatHover', () => {
+  it('stays compact on a day span', () => {
+    assert.equal(formatHover(13 * 3600 + 300, { start: null, spanSeconds: DAY }), '13:05');
+  });
+
+  it('adds the day on anchored long spans', () => {
+    assert.equal(formatHover(13.5 * DAY, { start: JAN_2023, spanSeconds: 31 * DAY }), 'Jan 14, 12:00');
   });
 });

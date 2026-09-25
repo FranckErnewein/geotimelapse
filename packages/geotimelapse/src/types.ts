@@ -18,6 +18,14 @@ export interface FramePoints {
   count: number;
 }
 
+/** Time range of a source's data. */
+export interface TimeDomain {
+  /** Null when the data has no absolute anchor (e.g. day-relative seconds):
+   *  the component then labels elapsed time instead of calendar dates. */
+  start: Date | null;
+  spanSeconds: number;
+}
+
 /** Cumulative totals since the start of the day. */
 export interface Totals {
   count: number;
@@ -32,6 +40,9 @@ export interface Totals {
 export interface GeoTimelapseSource {
   /** Prepares the day (downloads, tables...). Called once on mount. */
   load(onProgress?: (loadedBytes: number, totalBytes: number) => void): Promise<void>;
+  /** Time range of the loaded data, analyzed from the data itself during
+   *  load() — the component adapts its clock, axis and labels to it. */
+  domain(): TimeDomain;
   /** Events won during [fromSecond, toSecond), aggregated by location. */
   frame(fromSecond: number, toSecond: number): Promise<FramePoints>;
   /** Cumulative totals from midnight up to (excluding) `second`. */

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import type { FramePoints, GeoTimelapseSource, MapBounds, Totals } from 'geotimelapse';
+import type { FramePoints, GeoTimelapseSource, MapBounds, TimeDomain, Totals } from 'geotimelapse';
 import { GeoTimelapse } from 'geotimelapse';
 
 import './styles.css';
@@ -9,9 +9,9 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 const MAPBOX_TOKEN = 'pk.eyJ1IjoiZnJhbmNrZXJuZXdlaW4iLCJhIjoiYXJLM0dISSJ9.mod0ppb2kjzuMy8j1pl0Bw';
 
 const FRANCE: MapBounds = { west: -5.2, south: 41.3, east: 9.6, north: 51.1 };
-const DAY_SECONDS = 86400;
-const MINUTES = 24 * 60;
-const DAY_MS = 24 * 3600 * 1000;
+const DAY_S = 86400;
+const DAY_MS = DAY_S * 1000;
+const ACTIVITY_BUCKETS = 24 * 60;
 
 const euro = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
 const number = new Intl.NumberFormat('fr-FR');
@@ -36,33 +36,49 @@ interface Columns {
   minuteCounts: Float32Array;
 }
 
-function buildColumns(rows: { second: number; lon: number; lat: number; value: number }[]): Columns {
+function buildColumns(
+  rows: { second: number; lon: number; lat: number; value: number }[],
+  spanSeconds: number,
+): Columns {
   rows.sort((a, b) => a.second - b.second);
   const seconds = new Uint32Array(rows.length);
   const lons = new Float32Array(rows.length);
   const lats = new Float32Array(rows.length);
   const cumulative = new Float64Array(rows.length + 1);
-  const minuteCounts = new Float32Array(MINUTES);
+  const minuteCounts = new Float32Array(ACTIVITY_BUCKETS);
   rows.forEach((row, i) => {
     seconds[i] = row.second;
     lons[i] = row.lon;
     lats[i] = row.lat;
     cumulative[i + 1] = cumulative[i] + row.value;
-    minuteCounts[Math.floor(row.second / 60)] += 1;
+    minuteCounts[Math.min(Math.floor((row.second / spanSeconds) * ACTIVITY_BUCKETS), ACTIVITY_BUCKETS - 1)] += 1;
   });
   return { seconds, lons, lats, cumulative, minuteCounts };
 }
 
+// Deterministic PRNG (mulberry32), to spread day-precision sales inside
+// their day instead of firing them all at midnight.
+function makeRng(seed: number): () => number {
+  let state = seed >>> 0;
+  return () => {
+    state = (state + 0x6d2b79f5) | 0;
+    let t = Math.imul(state ^ (state >>> 15), 1 | state);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
 /**
- * A GeoTimelapseSource over the DVF sample (French property sales): the CSV's
- * date span is mapped linearly onto the player's day, so the month replays as
- * one 24h timelapse. Multi-lot sales carry their price on the first row only,
- * keeping the running total honest.
+ * A GeoTimelapseSource over the DVF sample (French property sales). The
+ * domain is analyzed from the data (real dates); sales only carry a date, so
+ * each one is spread deterministically inside its day. Multi-lot sales carry
+ * their price on the first row only, keeping the running total honest.
  */
 function createDvfCsvSource(url: string): GeoTimelapseSource {
   let loadPromise: Promise<void> | null = null;
   let all: Columns | null = null;
   let scoped: Columns | null = null;
+  let loadedDomain: TimeDomain = { start: null, spanSeconds: DAY_S };
 
   const load = (onProgress?: (loadedBytes: number, totalBytes: number) => void) =>
     (loadPromise ??= (async () => {
@@ -96,20 +112,23 @@ function createDvfCsvSource(url: string): GeoTimelapseSource {
         lastDay = Math.max(lastDay, day);
       }
 
-      const span = lastDay - firstDay + DAY_MS;
+      const spanSeconds = (lastDay + DAY_MS - firstDay) / 1000;
+      loadedDomain = { start: new Date(firstDay), spanSeconds };
+      const rng = makeRng(42);
       all = buildColumns(
         parsed.map(({ day, lon, lat, value }) => ({
-          second: Math.min(Math.floor(((day - firstDay) / span) * DAY_SECONDS), DAY_SECONDS - 1),
+          second: (day - firstDay) / 1000 + Math.floor(rng() * DAY_S),
           lon,
           lat,
           value,
         })),
+        spanSeconds,
       );
       onProgress?.(text.length, text.length);
     })());
 
   const frame = async (fromSecond: number, toSecond: number): Promise<FramePoints> => {
-    const { seconds, lons, lats } = all ?? buildColumns([]);
+    const { seconds, lons, lats } = all ?? buildColumns([], DAY_S);
     const start = lowerBound(seconds, Math.floor(fromSecond));
     const end = lowerBound(seconds, Math.floor(toSecond));
     const byLocation = new Map<string, { lon: number; lat: number; weight: number }>();
@@ -139,7 +158,7 @@ function createDvfCsvSource(url: string): GeoTimelapseSource {
   };
 
   const activity = async (): Promise<Float32Array> =>
-    Float32Array.from((scoped ?? all)?.minuteCounts ?? new Float32Array(MINUTES));
+    Float32Array.from((scoped ?? all)?.minuteCounts ?? new Float32Array(ACTIVITY_BUCKETS));
 
   const setScope = async (scope: MapBounds | null): Promise<void> => {
     if (!scope || !all) {
@@ -154,7 +173,7 @@ function createDvfCsvSource(url: string): GeoTimelapseSource {
         rows.push({ second: all.seconds[i], lon, lat, value: all.cumulative[i + 1] - all.cumulative[i] });
       }
     }
-    scoped = buildColumns(rows);
+    scoped = buildColumns(rows, loadedDomain.spanSeconds);
   };
 
   const dispose = async (): Promise<void> => {
@@ -163,7 +182,7 @@ function createDvfCsvSource(url: string): GeoTimelapseSource {
     loadPromise = null;
   };
 
-  return { load, frame, totals, activity, setScope, dispose };
+  return { load, domain: () => loadedDomain, frame, totals, activity, setScope, dispose };
 }
 
 function DemoPage() {
@@ -185,7 +204,7 @@ function DemoPage() {
         source={source}
         mapboxAccessToken={MAPBOX_TOKEN}
         initialBounds={FRANCE}
-        dateLabel="France · Jan 2023, one month in a day"
+        dateLabel="France · DVF"
         formatValue={(value) => euro.format(value)}
         formatCount={(count) => `${number.format(count)} sales`}
         /* ~2k sparse events on a country view: small bright sparks. */

@@ -20,21 +20,26 @@ export interface TimelapseClock {
   play: () => void;
   pause: () => void;
   toggle: () => void;
-  seek: (daySeconds: number) => void;
-  /** Seconds elapsed since the start of the replayed day, in [0, DAY_SECONDS]. */
-  getDaySeconds: () => number;
+  seek: (seconds: number) => void;
+  /** Seconds elapsed since the start of the replayed domain, in [0, span]. */
+  getSeconds: () => number;
+  /** Domain seconds covered by the full replay; DAY_SECONDS until setSpan. */
+  getSpan: () => number;
+  /** Adopts the loaded source's domain span (clamps the playhead into it). */
+  setSpan: (spanSeconds: number) => void;
+  /** Replayed seconds one nominal tick covers — the frame window unit. */
+  getTickSpan: () => number;
   /** Increments on every time jump (seek, end-of-day restart): consumers use it to invalidate history. */
   getEpoch: () => number;
   isPlaying: () => boolean;
   /** Notified up to MAX_TICKS_PER_SECOND times while playing, and on play/pause/seek. */
   subscribe: (listener: () => void) => () => void;
-  /** Replayed seconds one nominal tick covers — the frame window unit. */
-  tickSpanSeconds: number;
 }
 
 function createClock(playbackSeconds: number): TimelapseClock {
-  const rate = DAY_SECONDS / playbackSeconds;
-  let daySeconds = 0;
+  let spanSeconds = DAY_SECONDS;
+  let rate = spanSeconds / playbackSeconds;
+  let seconds = 0;
   let epoch = 0;
   let playing = false;
   let rafId = 0;
@@ -52,10 +57,10 @@ function createClock(playbackSeconds: number): TimelapseClock {
       return;
     }
     nextTickAt = Math.max(nextTickAt + MIN_TICK_MS, now);
-    daySeconds += (Math.min(Math.max(now - lastTick, 0), MAX_TICK_MS) / 1000) * rate;
+    seconds += (Math.min(Math.max(now - lastTick, 0), MAX_TICK_MS) / 1000) * rate;
     lastTick = now;
-    if (daySeconds >= DAY_SECONDS) {
-      daySeconds = DAY_SECONDS;
+    if (seconds >= spanSeconds) {
+      seconds = spanSeconds;
       playing = false;
     } else {
       rafId = requestAnimationFrame(tick);
@@ -65,8 +70,8 @@ function createClock(playbackSeconds: number): TimelapseClock {
 
   const play = () => {
     if (playing) return;
-    if (daySeconds >= DAY_SECONDS) {
-      daySeconds = 0;
+    if (seconds >= spanSeconds) {
+      seconds = 0;
       epoch += 1;
     }
     playing = true;
@@ -88,18 +93,25 @@ function createClock(playbackSeconds: number): TimelapseClock {
     pause,
     toggle: () => (playing ? pause() : play()),
     seek: (value: number) => {
-      daySeconds = Math.min(Math.max(value, 0), DAY_SECONDS);
+      seconds = Math.min(Math.max(value, 0), spanSeconds);
       epoch += 1;
       notify();
     },
-    getDaySeconds: () => daySeconds,
+    getSeconds: () => seconds,
+    getSpan: () => spanSeconds,
+    setSpan: (value: number) => {
+      spanSeconds = Math.max(value, 1);
+      rate = spanSeconds / playbackSeconds;
+      seconds = Math.min(seconds, spanSeconds);
+      notify();
+    },
+    getTickSpan: () => rate / MAX_TICKS_PER_SECOND,
     getEpoch: () => epoch,
     isPlaying: () => playing,
     subscribe: (listener: () => void) => {
       listeners.add(listener);
       return () => listeners.delete(listener);
     },
-    tickSpanSeconds: rate / MAX_TICKS_PER_SECOND,
   };
 }
 
@@ -127,11 +139,11 @@ export function useIsPlaying(): boolean {
 }
 
 /**
- * Current day time, quantized: the component only re-renders when the value
- * crosses a quantum boundary, so each consumer picks its own refresh rate.
+ * Current playhead time, quantized: the component only re-renders when the
+ * value crosses a quantum boundary, so each consumer picks its refresh rate.
  */
-export function useDaySeconds(quantum = 1): number {
+export function usePlayheadSeconds(quantum = 1): number {
   const clock = useTimelapseClock();
-  const getSnapshot = useCallback(() => Math.floor(clock.getDaySeconds() / quantum) * quantum, [clock, quantum]);
+  const getSnapshot = useCallback(() => Math.floor(clock.getSeconds() / quantum) * quantum, [clock, quantum]);
   return useSyncExternalStore(clock.subscribe, getSnapshot, () => 0);
 }
