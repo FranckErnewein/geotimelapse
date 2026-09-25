@@ -11,8 +11,10 @@
   "dependencies": {
     "deck.gl": "^9.4.0",
     "geotimelapse": "workspace:*",
+    "highlight.js": "^11.12.0",
     "mapbox-gl": "^3.30.0",
     "marked": "^18.0.14",
+    "marked-highlight": "^2.2.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-map-gl": "^8.1.0"

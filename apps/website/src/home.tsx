@@ -1,12 +1,29 @@
-import { marked } from 'marked';
+import hljs from 'highlight.js/lib/core';
+import bash from 'highlight.js/lib/languages/bash';
+import css from 'highlight.js/lib/languages/css';
+import typescript from 'highlight.js/lib/languages/typescript';
+import { Marked } from 'marked';
+import { markedHighlight } from 'marked-highlight';
 import { createRoot } from 'react-dom/client';
 
 import readme from '../../../packages/geotimelapse/README.md?raw';
 import './styles.css';
+import 'highlight.js/styles/github-dark.css';
+
+hljs.registerLanguage('typescript', typescript);
+hljs.registerAliases(['ts', 'tsx'], { languageName: 'typescript' });
+hljs.registerLanguage('bash', bash);
+hljs.registerAliases(['sh'], { languageName: 'bash' });
+hljs.registerLanguage('css', css);
 
 // The package README is the single source of the presentation: what npm
 // shows is what the site shows.
-const presentation = marked.parse(readme, { async: false });
+const presentation = new Marked(
+  markedHighlight({
+    langPrefix: 'hljs language-',
+    highlight: (code, language) => (hljs.getLanguage(language) ? hljs.highlight(code, { language }).value : code),
+  }),
+).parse(readme, { async: false });
 
 function Home() {
   return (
