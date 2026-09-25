@@ -3,8 +3,8 @@ import * as duckdb from '@duckdb/duckdb-wasm';
 import type { FramePoints, GeoTimelapseSource, MapBounds, TimeDomain, Totals } from './types.js';
 
 export interface DuckDbSourceOptions {
-  /** URL of the day's parquet: day_second INT (seconds since the day's
-   *  midnight, sorted), a value column, lat/lon FLOAT. ~60M rows is fine. */
+  /** URL of the parquet: a sorted INT seconds column (see timeColumn), a
+   *  value column, lat/lon FLOAT. ~60M rows is fine. */
   parquetUrl: string;
   /**
    * Where the duckdb-wasm engine files come from. Omitted: version-matched
@@ -15,6 +15,9 @@ export interface DuckDbSourceOptions {
   engine?: string | duckdb.DuckDBBundles;
   /** Name of the parquet column summed into totals().value. */
   valueColumn?: string;
+  /** Name of the sorted INT seconds column. Epoch seconds get calendar
+   *  labels; smaller origins (e.g. day_second) replay as elapsed time. */
+  timeColumn?: string;
 }
 
 function resolveBundles(engine: DuckDbSourceOptions['engine']): duckdb.DuckDBBundles {
@@ -45,6 +48,7 @@ export function createDuckDbSource({
   parquetUrl,
   engine,
   valueColumn = 'value',
+  timeColumn = 'day_second',
 }: DuckDbSourceOptions): GeoTimelapseSource {
   let dbPromise: Promise<duckdb.AsyncDuckDB> | null = null;
   let connPromise: Promise<duckdb.AsyncDuckDBConnection> | null = null;
@@ -75,12 +79,15 @@ export function createDuckDbSource({
   // Running totals per second, so counters read one row per tick.
   const CREATE_TOTALS = `
     CREATE OR REPLACE TABLE totals_by_second AS
-    SELECT day_second,
+    SELECT s,
            sum(events) OVER w AS events,
            sum(value) OVER w AS value
     FROM scope_seconds
-    WINDOW w AS (ORDER BY day_second)
+    WINDOW w AS (ORDER BY s)
   `;
+
+  // Any origin from 2000-01-01 on reads as absolute epoch seconds.
+  const EPOCH_ANCHOR_MIN = 946_684_800;
 
   let loadedDomain: TimeDomain = { start: null, spanSeconds: 24 * 3600 };
 
@@ -115,29 +122,36 @@ export function createDuckDbSource({
       const db = await getDB();
       await db.registerFileBuffer('replay.parquet', buffer);
       const conn = await getConn();
-      // The value column is normalized at ingest so every later query is
-      // schema-agnostic. The source order (sorted by day_second) is what
-      // gives the in-memory table its zonemap pruning.
+      // The domain is analyzed from the data: the origin anchors the
+      // calendar (when absolute), the playhead runs on 0-based seconds.
+      const probe = await conn.query(
+        `SELECT min(${timeColumn})::BIGINT AS first, max(${timeColumn})::BIGINT AS last
+         FROM read_parquet('replay.parquet')`,
+      );
+      const first = Number(probe.toArray()[0]?.first ?? 0);
+      const last = Number(probe.toArray()[0]?.last ?? 0);
+      loadedDomain = {
+        start: first >= EPOCH_ANCHOR_MIN ? new Date(first * 1000) : null,
+        spanSeconds: Math.max(last - first + 1, 1),
+      };
+      // Time and value columns are normalized at ingest so every later query
+      // is schema-agnostic. The source order (sorted by time) is what gives
+      // the in-memory table its zonemap pruning.
       await conn.query(`
         CREATE OR REPLACE TABLE events AS
-        SELECT day_second, ${valueColumn} AS value, lat, lon
+        SELECT (${timeColumn} - ${first})::INTEGER AS s, ${valueColumn} AS value, lat, lon
         FROM read_parquet('replay.parquet')
       `);
       // Per-second counts within the current scope, the single base both
       // aggregates derive from — so consumers never rescan the raw rows.
       await conn.query(`
         CREATE OR REPLACE TABLE scope_seconds AS
-        SELECT day_second, count(*) AS events, sum(value) AS value
+        SELECT s, count(*) AS events, sum(value) AS value
         FROM events
-        GROUP BY day_second
+        GROUP BY s
       `);
       await conn.query(CREATE_TOTALS);
       await db.dropFile('replay.parquet');
-      // The day_second column is day-relative: the span is analyzed from the
-      // data, the calendar anchor stays with the consumer (dateLabel prop).
-      const bounds = await conn.query('SELECT max(day_second) AS last FROM events');
-      const last = Number(bounds.toArray()[0]?.last ?? 0);
-      loadedDomain = { start: null, spanSeconds: Math.max(last + 1, 1) };
     })());
   };
 
@@ -147,7 +161,7 @@ export function createDuckDbSource({
     // literal would disable zonemap pruning and full-scan the table.
     const result = await conn.query(`
       SELECT lon, lat, count(*)::DOUBLE AS weight FROM events
-      WHERE day_second >= ${Math.floor(fromSecond)} AND day_second < ${Math.floor(toSecond)}
+      WHERE s >= ${Math.floor(fromSecond)} AND s < ${Math.floor(toSecond)}
         AND lat IS NOT NULL AND lon IS NOT NULL
       GROUP BY lon, lat
     `);
@@ -169,8 +183,8 @@ export function createDuckDbSource({
     const result = await conn.query(`
       SELECT events::DOUBLE AS events, value::DOUBLE AS value
       FROM totals_by_second
-      WHERE day_second < ${Math.floor(second)}
-      ORDER BY day_second DESC
+      WHERE s < ${Math.floor(second)}
+      ORDER BY s DESC
       LIMIT 1
     `);
     const row = result.numRows > 0 ? result.get(0) : null;
@@ -179,20 +193,23 @@ export function createDuckDbSource({
 
   const activity = async (): Promise<Float32Array> => {
     const conn = await getConn();
+    // 1440 uniform buckets over the span — the day's minutes, generalized.
+    const buckets = 24 * 60;
     const result = await conn.query(`
-      SELECT (day_second // 60)::INT AS minute, sum(events)::DOUBLE AS events
+      SELECT least(s::BIGINT * ${buckets} // ${loadedDomain.spanSeconds}, ${buckets - 1})::INT AS bucket,
+             sum(events)::DOUBLE AS events
       FROM scope_seconds
-      GROUP BY minute
+      GROUP BY bucket
     `);
-    const minutes = result.getChild('minute')!.toArray() as Int32Array;
+    const bucket = result.getChild('bucket')!.toArray() as Int32Array;
     const events = result.getChild('events')!.toArray() as Float64Array;
-    const counts = new Float32Array(24 * 60);
-    for (let i = 0; i < minutes.length; i++) counts[minutes[i]] = events[i];
+    const counts = new Float32Array(buckets);
+    for (let i = 0; i < bucket.length; i++) counts[bucket[i]] = events[i];
     return counts;
   };
 
-  // The scan over the raw rows is chunked hour by hour (pruned on
-  // day_second) so playback tick queries interleave instead of queueing
+  // The scan over the raw rows is chunked in 24 time slices (pruned on the
+  // sorted seconds) so playback tick queries interleave instead of queueing
   // behind one long statement.
   const setScope = (bounds: MapBounds | null): Promise<void> => {
     const filter = bounds
@@ -208,17 +225,18 @@ export function createDuckDbSource({
         const conn = await getConn();
         await conn.query(`
           CREATE OR REPLACE TABLE scope_seconds_build AS
-          SELECT day_second, count(*) AS events, sum(value) AS value
-          FROM events WHERE false GROUP BY day_second
+          SELECT s, count(*) AS events, sum(value) AS value
+          FROM events WHERE false GROUP BY s
         `);
-        for (let hour = 0; hour < 24; hour++) {
+        const slice = Math.ceil(loadedDomain.spanSeconds / 24);
+        for (let chunk = 0; chunk < 24; chunk++) {
           if (requestedFilter !== filter) return;
           await conn.query(`
             INSERT INTO scope_seconds_build
-            SELECT day_second, count(*), sum(value)
+            SELECT s, count(*), sum(value)
             FROM events
-            WHERE day_second >= ${hour * 3600} AND day_second < ${(hour + 1) * 3600} AND ${filter}
-            GROUP BY day_second
+            WHERE s >= ${chunk * slice} AND s < ${(chunk + 1) * slice} AND ${filter}
+            GROUP BY s
           `);
         }
         await conn.query(`CREATE OR REPLACE TABLE scope_seconds AS FROM scope_seconds_build`);
