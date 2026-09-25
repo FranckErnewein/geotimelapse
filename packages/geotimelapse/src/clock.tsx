@@ -4,9 +4,8 @@ import type { PropsWithChildren } from 'react';
 import { createContext, useCallback, useContext, useEffect, useState, useSyncExternalStore } from 'react';
 
 export const DAY_SECONDS = 24 * 60 * 60;
-// Wall-clock duration of a full-day replay.
-const PLAYBACK_SECONDS = 180;
-const RATE = DAY_SECONDS / PLAYBACK_SECONDS;
+/** Default wall-clock duration of a full replay. */
+export const DEFAULT_PLAYBACK_SECONDS = 180;
 // Ticks are capped below the display refresh rate: extra updates are invisible
 // and would only waste re-renders on high-refresh screens.
 const MAX_TICKS_PER_SECOND = 24;
@@ -29,9 +28,12 @@ export interface TimelapseClock {
   isPlaying: () => boolean;
   /** Notified up to MAX_TICKS_PER_SECOND times while playing, and on play/pause/seek. */
   subscribe: (listener: () => void) => () => void;
+  /** Replayed seconds one nominal tick covers — the frame window unit. */
+  tickSpanSeconds: number;
 }
 
-function createClock(): TimelapseClock {
+function createClock(playbackSeconds: number): TimelapseClock {
+  const rate = DAY_SECONDS / playbackSeconds;
   let daySeconds = 0;
   let epoch = 0;
   let playing = false;
@@ -50,7 +52,7 @@ function createClock(): TimelapseClock {
       return;
     }
     nextTickAt = Math.max(nextTickAt + MIN_TICK_MS, now);
-    daySeconds += (Math.min(Math.max(now - lastTick, 0), MAX_TICK_MS) / 1000) * RATE;
+    daySeconds += (Math.min(Math.max(now - lastTick, 0), MAX_TICK_MS) / 1000) * rate;
     lastTick = now;
     if (daySeconds >= DAY_SECONDS) {
       daySeconds = DAY_SECONDS;
@@ -97,13 +99,18 @@ function createClock(): TimelapseClock {
       listeners.add(listener);
       return () => listeners.delete(listener);
     },
+    tickSpanSeconds: rate / MAX_TICKS_PER_SECOND,
   };
 }
 
 const ClockContext = createContext<TimelapseClock | null>(null);
 
-export function TimelapseClockProvider({ children }: PropsWithChildren) {
-  const [clock] = useState(createClock);
+export function TimelapseClockProvider({
+  playbackSeconds = DEFAULT_PLAYBACK_SECONDS,
+  children,
+}: PropsWithChildren<{ playbackSeconds?: number }>) {
+  // Fixed at mount: remount the provider to change the replay duration.
+  const [clock] = useState(() => createClock(playbackSeconds));
   useEffect(() => () => clock.pause(), [clock]);
   return <ClockContext.Provider value={clock}>{children}</ClockContext.Provider>;
 }

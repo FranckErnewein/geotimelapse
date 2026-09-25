@@ -5,12 +5,6 @@ import { useEffect, useState } from 'react';
 import { useTimelapseClock } from './clock.js';
 import type { GeoTimelapseSource } from './types.js';
 
-// One clock tick of replayed time (480x speed, 24 ticks/s).
-const DEFAULT_WINDOW_S = 20;
-// Widened-window cap when ticks were skipped (slow queries, render lag).
-// Kept tight: giant catch-up frames feed the lag they compensate for.
-const MAX_WINDOW_S = 3 * DEFAULT_WINDOW_S;
-
 export interface FrameBids {
   /** Monotonic frame number, also the identity of the frame's layer slot. */
   key: number;
@@ -41,6 +35,11 @@ export function useFrameHistory(source: GeoTimelapseSource, ready: boolean): Fra
     let lastQueried = -1;
     let lastEpoch = -1;
     let frameKey = 0;
+    // One clock tick of replayed time; the widened-window cap for skipped
+    // ticks (slow queries, render lag) stays tight — giant catch-up frames
+    // feed the lag they compensate for.
+    const windowS = Math.max(Math.round(clock.tickSpanSeconds), 1);
+    const maxWindowS = 3 * windowS;
 
     const query = async () => {
       const daySeconds = Math.floor(clock.getDaySeconds());
@@ -52,7 +51,7 @@ export function useFrameHistory(source: GeoTimelapseSource, ready: boolean): Fra
         // A time jump (seek, restart) starts the trail over; mere lag only
         // widens the window, capped, so skipped ticks don't drop events.
         const jumped = epoch !== lastEpoch || lastQueried < 0 || daySeconds <= lastQueried;
-        const span = jumped ? DEFAULT_WINDOW_S : Math.min(daySeconds - lastQueried, MAX_WINDOW_S);
+        const span = jumped ? windowS : Math.min(daySeconds - lastQueried, maxWindowS);
         lastQueried = daySeconds;
         lastEpoch = epoch;
         const result = await source.frame(daySeconds - span, daySeconds);

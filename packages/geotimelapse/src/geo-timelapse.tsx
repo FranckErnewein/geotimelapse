@@ -197,7 +197,7 @@ function Stage({
  */
 export function GeoTimelapse(props: GeoTimelapseProps) {
   return (
-    <TimelapseClockProvider>
+    <TimelapseClockProvider key={props.playbackSeconds} playbackSeconds={props.playbackSeconds}>
       <Stage {...props} />
     </TimelapseClockProvider>
   );

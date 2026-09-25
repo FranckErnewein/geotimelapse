@@ -53,6 +53,8 @@ export interface GeoTimelapseProps {
   mapboxAccessToken: string;
   /** Area the map initially fits; defaults to the continental US. */
   initialBounds?: MapBounds;
+  /** Wall-clock duration of the full replay, in seconds (default 180). */
+  playbackSeconds?: number;
   /** Overrides on the glow rendering knobs (see GlowTuning). Calibrate
    *  pointAlpha to the day's density: the playback trail stacks 12 additive
    *  frames, so dense datasets need it well below the bench value. */
